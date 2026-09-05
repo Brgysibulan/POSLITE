@@ -2,6 +2,34 @@
 
 All notable POSlite development changes are documented here.
 
+## [Unreleased] - 2026-09-05
+
+### Added
+
+- Web development prototype for **Pautang na Pera / Cash Loans**, kept separate from product-credit/utang sales.
+- Cash-loan borrower, principal, optional contact, loan date, optional due date, notes, payment history, and automatic Unpaid / Partial / Interest Pending / Fully Paid status.
+- Cash-loan interest modes: not set yet, no interest, or fixed interest amount.
+- Cash-loan summary for total principal loaned, principal still outstanding, total returned, and actual interest collected.
+- `Settings → Appearance & Custom Terms` for store-specific wording.
+- Appearance choices: **System — follow phone**, **Light mode**, and **Dark mode**.
+- Editable terminology for Sell/Benta, Sales/Halin, Products/Paninda, Purchases/Kumprada, Inventory/Stock ng Paninda, Credit/Utang, product credit, cash loans, Expenses/Gastos, Analytics/Kita at Tubo, Reports/Talaan, Gross Profit/Tubo sa Paninda, Net Profit/Natirang Tubo, purchase spending, low stock, and out of stock.
+- One-tap **Sari-sari Terms** and **Standard Terms** presets.
+- Reusable `.posconfig` export/import containing only appearance and terminology, with no sales, products, stock, customers, loans, or other business records.
+- `docs/CASH-LOANS.md` and `docs/CUSTOMIZATION.md` documentation.
+- `preferences.js` and `preferences.css` cached for offline web use.
+
+### Changed
+
+- Cash-loan principal repayments are kept outside Sales and Profit; only actual collected interest is treated as loan interest income.
+- Native Android receipt output changed from the WebView/Android PrintManager/PDF path to native Android bitmap/JPG generation.
+- Native receipt JPG uses lightweight compression and safe Android sharing/storage handling.
+- Web Service Worker cache now includes cash-loan and appearance/custom-term assets.
+
+### Fixed
+
+- Native Android receipt output is guarded so save/share failures provide feedback instead of closing the app through the previous print/PDF path.
+- Added Android FileProvider handling for safe JPG receipt sharing.
+
 ## [0.3.0-native-dev] - 2026-09-05
 
 ### Added
@@ -18,7 +46,7 @@ All notable POSlite development changes are documented here.
 - Native customer credit/utang records and payment recording.
 - Native expense recording.
 - Native 7/30/90/365-day Analytics for Sales, COGS, Gross Profit, Expenses, Estimated Net, and Purchase Spend.
-- Native sale receipt generation after successful checkout, recent receipt history, Android share intent, Android Print Framework, and Save-as-PDF path with an 80 mm-oriented receipt layout.
+- Native sale receipt generation after successful checkout, recent receipt history, JPG save/share output, and Android-local receipt handling.
 - Native store settings for store name, owner, and address.
 - GitHub Actions workflow `.github/workflows/android-native-build.yml` that builds `:app:assembleDebug` and uploads the debug APK when successful.
 - Native Android implementation documentation in `docs/ANDROID-NATIVE.md`.
@@ -42,7 +70,7 @@ All notable POSlite development changes are documented here.
 
 - Native Android `.pos` import/export compatibility is not implemented yet.
 - POSlite-generated product QR labels are not implemented yet.
-- Direct Bluetooth thermal-printer integration is not implemented yet; current native receipts use Android Print/Save PDF and Share.
+- Direct Bluetooth thermal-printer integration is not implemented yet; current native receipt output is JPG save/share.
 - Google Code Scanner can depend on a Google Play services scanner module; a fully bundled CameraX + ML Kit offline scanner remains a hardening option.
 - Hold/resume sale, void/refund/return, and dedicated damaged/expired workflows are not implemented yet.
 - Native build must pass the APK workflow before this development milestone is treated as a stable Android baseline.
