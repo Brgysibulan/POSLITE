@@ -14,6 +14,8 @@ All notable POSlite development changes are documented here.
 - Common sari-sari store unit patterns such as piece/pack/box and gram/250 g/500 g/1 kg/sack.
 - Decimal quantity selling for weight/liquid products while keeping piece products whole-number based.
 - Optional barcode field for products.
+- Explicit **Product has no barcode** option in Add/Edit Product for loose, repacked, local, produce, or other items without printed barcodes.
+- No-barcode products remain fully usable in Sell through product-name/category search and touch selection without requiring a fake barcode.
 - Duplicate barcode validation.
 - Barcode-aware search and exact barcode + Enter lookup for keyboard-style scanners.
 - Dedicated **Ready to Scan Barcode** panel on the Sell screen.
@@ -34,7 +36,7 @@ All notable POSlite development changes are documented here.
 - CSV report export now includes COGS and gross profit.
 - `.pos` schema version 2 including products/unit conversions, barcode, purchases, stock movements, sales, customers, expenses, and settings.
 - `.pos` schema-1 import compatibility and automatic legacy product normalization.
-- Service Worker cache bumped to `poslite-v0.2.0-scan1` and now includes `scanner.js` and `scanner.css` for offline-loaded scanner UI behavior.
+- Service Worker cache bumped to `poslite-v0.2.0-scan2` and now includes `scanner.js`, `scanner.css`, and `no-barcode.js` for offline-loaded scanner and no-barcode UI behavior.
 
 ### Changed
 
@@ -48,6 +50,7 @@ All notable POSlite development changes are documented here.
 - Product base unit is locked after creation in the current interface to protect existing stock and historical conversions.
 - Web UI is now optimized primarily for portrait smartphone use while retaining desktop/tablet support.
 - Barcode scanning now has an explicit scanner-ready workflow instead of relying only on the general search box.
+- Empty barcode remains the canonical stored value for products without barcodes, preserving v0.2 database and `.pos` backup compatibility without a schema migration.
 
 ### Fixed
 
