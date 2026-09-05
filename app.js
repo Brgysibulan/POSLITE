@@ -189,10 +189,11 @@ async function init() {
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
 async function migrateLegacyProducts() {
-  const legacy = state.products.filter(p => p.schemaVersion !== 2 || p.stockBase === undefined || !Array.isArray(p.units));
+  const rawProducts = await getAll('products');
+  const legacy = rawProducts.filter(p => p.schemaVersion !== 2 || p.stockBase === undefined || !Array.isArray(p.units));
   if (!legacy.length) return;
   for (const p of legacy) await put('products', normalizeProduct(p));
-  await refreshAll(false);
+  await refreshAll();
   toast('Product data upgraded for unit conversions.');
 }
 async function refreshAll(render = true) {
@@ -604,11 +605,13 @@ async function checkout() {
   const productStore = tx.objectStore('products');
   const movementStore = tx.objectStore('movements');
   const salesStore = tx.objectStore('sales');
+  const workingProducts = new Map(state.products.map(p => [p.id, normalizeProduct(p)]));
 
   for (const item of saleItems) {
-    const p = normalizeProduct(state.products.find(x => x.id === item.productId));
+    const p = workingProducts.get(item.productId);
     p.stockBase = Math.max(0, num(p.stockBase) - num(item.qtyBase));
     p.updatedAt = createdAt;
+    workingProducts.set(p.id, p);
     productStore.put(p);
     movementStore.put({
       id: uid('mov'), productId: p.id, type: 'sale', qtyBase: -num(item.qtyBase),
@@ -670,8 +673,9 @@ function purchaseDialog() {
     const totalCost = items.reduce((a, i) => a + num(i.totalCost), 0);
 
     const tx = db.transaction(['products', 'purchases', 'movements'], 'readwrite');
+    const workingProducts = new Map(state.products.map(p => [p.id, normalizeProduct(p)]));
     for (const line of items) {
-      const p = normalizeProduct(state.products.find(x => x.id === line.productId));
+      const p = workingProducts.get(line.productId);
       const oldStock = num(p.stockBase);
       const oldValue = oldStock * num(p.avgCostBase);
       const incoming = num(line.qtyBase);
@@ -679,6 +683,7 @@ function purchaseDialog() {
       p.avgCostBase = newStock > 0 ? (oldValue + num(line.totalCost)) / newStock : 0;
       p.stockBase = newStock;
       p.updatedAt = createdAt;
+      workingProducts.set(p.id, p);
       tx.objectStore('products').put(p);
       tx.objectStore('movements').put({
         id: uid('mov'), productId: p.id, type: 'purchase', qtyBase: incoming,
