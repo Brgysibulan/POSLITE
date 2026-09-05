@@ -3,45 +3,47 @@
 ## Project identity
 
 **Name:** POSlite  
-**Current phase:** Native Android development + web reference stabilization  
-**Web reference version:** v0.2.0  
+**Current phase:** Native Android development + Android-first web workflow validation  
+**Web reference version:** v0.2.0 plus documented development modules  
 **Native Android development version:** v0.3.0-native-dev  
 **Primary platform:** Android smartphone  
-**First verified native APK baseline:** `9f4acb298eb71cb13da5dcb863c1749acca50507`  
-**Native build:** GitHub Actions run #8 — SUCCESS
+**First verified native APK baseline:** `9f4acb298eb71cb13da5dcb863c1749acca50507` — build #8 SUCCESS  
+**Latest verified native JPG-receipt hotfix baseline:** `8b0ea16b79a073aeed1b43bfdaf9fd335e08e631` — build #12 SUCCESS
 
-## Project rule
+## Mandatory project rule
 
-All development work must be documented. This includes implemented features, changes, technical decisions, database/storage changes, UI changes, `.pos` format changes, Analytics changes, bug fixes, version changes, current progress, and next steps.
+All POSlite development work must be documented alongside implementation. This includes features, changes, decisions, database/storage behavior, UI changes, config/backup formats, analytics rules, bug fixes, build milestones, current limitations, and next steps.
 
-Documentation must be updated alongside implementation.
+Master references:
+
+- `docs/PROJECT.md`
+- `CHANGELOG.md`
+- feature-specific documents under `docs/`
 
 ## Product goal
 
-POSlite is a lightweight, offline-first point-of-sale system for sari-sari stores and small retail businesses. It is designed primarily for Android smartphones, should remain usable without permanent internet access for day-to-day operation, and must accurately track inventory, purchases, sales, credit/utang, expenses, receipts, and profit.
+POSlite is a lightweight, offline-first POS for sari-sari stores and small retail businesses. The final product is Android-smartphone-first and should minimize technical/accounting wording in everyday operation while keeping correct stock, purchasing, sales, credit/utang, cash-loan, expense, receipt, and profit records.
 
 ## Platform strategy
 
-POSlite started as a web/PWA workflow prototype. The native Android implementation is now active under `android-native/`.
+POSlite started as a web/PWA workflow prototype. Native Android development is active under `android-native/`.
 
-The root web application is deliberately preserved as a stable reference/fallback while the Android APK is tested. The Android app is **not** a WebView wrapper; it is a native Kotlin/Jetpack Compose application with its own local SQLite database.
+The root web application remains a fast test/reference build so store workflows can be reviewed before they are hardened in native Android. The native app is not a WebView wrapper; it uses Kotlin, Jetpack Compose, and an Android-local SQLite database.
 
 Smartphone-first rules:
 
-- portrait-first workflow
+- portrait-first layouts
 - large touch targets
-- bottom navigation for common actions
 - minimal typing
 - scan-assisted selling
-- local/offline operational data
-- simple receipt generation and sharing
+- simple store language
+- offline operational records
+- quick receipt save/share
 - fast product lookup
-- clear stock/profit information
-- safe transaction history instead of destructive data behavior
+- understandable stock and profit summaries
+- safe transaction history
 
-## Architecture
-
-### Native Android — active development
+## Native Android architecture
 
 Location: `android-native/`
 
@@ -49,14 +51,15 @@ Technology:
 
 - Kotlin
 - Jetpack Compose
-- Android SQLite through `SQLiteOpenHelper`
-- Android Print Framework
-- Android share intents
+- SQLite through `SQLiteOpenHelper`
+- Android share/storage APIs
+- native Android Canvas/Bitmap JPG receipt generation
+- FileProvider for safe JPG sharing
 - Google Code Scanner development integration
 - Android Gradle Plugin 9.4 built-in Kotlin
 - Gradle 9.6
 - JDK 17
-- Android 17/API 37 compile SDK
+- Android 17/API 37 compile tooling
 - target SDK 36
 - minimum SDK 26
 
@@ -76,7 +79,9 @@ Tables:
 10. `expenses`
 11. `settings`
 
-### Web/PWA — stable reference
+The native Android operational database is independent from browser IndexedDB during development/testing.
+
+## Web/PWA reference architecture
 
 Location: repository root
 
@@ -85,12 +90,14 @@ Technology:
 - HTML
 - CSS
 - Vanilla JavaScript
-- IndexedDB database version 2
+- IndexedDB
+- browser local storage for UI-only preferences
 - Service Worker
 - Web App Manifest
 - `.pos` schema version 2 backup/restore
+- `.posconfig` schema version 1 for reusable appearance/terminology
 
-Web object stores:
+Main web IndexedDB stores:
 
 1. `products`
 2. `sales`
@@ -100,11 +107,9 @@ Web object stores:
 6. `expenses`
 7. `settings`
 
-The web and Android databases are intentionally separate during migration/testing.
+Cash-loan web prototype records currently use a separate local IndexedDB database so they remain isolated from normal POS sales while the workflow is being validated.
 
 ## Core inventory model
-
-### Base units
 
 Each product has one base inventory unit:
 
@@ -114,72 +119,47 @@ Each product has one base inventory unit:
 
 Every purchase and sale is converted to base quantity before stock changes.
 
-### Multiple units
+A product can have multiple configured units containing a label, base quantity, selling price, Sell flag, and Buy flag.
 
-A product can have multiple configured units. Each unit contains:
+Example — candy:
 
-- label
-- base quantity represented by one unit
-- selling price
-- Sell enabled/disabled
-- Buy enabled/disabled
+- base: piece
+- Piece = 1
+- Pack = 50
+- buying 4 packs adds 200 pieces
+- selling 3 pieces deducts 3
+- selling 1 pack deducts 50
 
-Selling price is independent from conversion quantity.
+Example — rice:
 
-### Candy example
+- base: gram
+- 250 g = 250
+- 500 g = 500
+- 1 kg = 1000
+- selling 1.25 of the 1 kg unit deducts 1250 g
 
-- base unit: `pc`
-- Piece = 1 piece
-- Pack = 50 pieces
+## Products
 
-Buying 4 packs adds 200 pieces. Selling 3 pieces deducts 3. Selling one pack deducts 50 from the same stock source.
+Implemented rules include:
 
-### Rice example
-
-- base unit: `g`
-- 250 g = 250 grams
-- 500 g = 500 grams
-- 1 kg = 1,000 grams
-- 25 kg Sack = 25,000 grams
-
-Buying two 25 kg sacks adds 50,000 grams. Selling quantity 1.25 of a configured 1 kg unit deducts 1,250 grams.
-
-## Product rules
-
-Implemented in the native Android source:
-
-- add product
-- edit product
+- add/edit product
 - optional unique barcode
-- explicit no-barcode product support
+- explicit no-barcode support
 - category
 - piece/gram/milliliter base unit
-- opening stock
-- opening cost per base unit
+- opening stock and cost
 - low-stock threshold
-- multiple selling/purchasing units
-- unit-specific selling price
-- delete guard for products already used by transactions
+- multiple sell/buy units and conversions
+- selling price per configured unit
+- transaction-history protection for used products
 
-No-barcode products remain searchable and tappable in Sell and do not require fake barcode values.
+No-barcode items remain searchable/tappable and never require a fake barcode.
 
 ## Purchases / Stock In
 
-Native Android supports:
+Implemented rules include supplier, multiple lines, purchasing unit, quantity, cost, purchase total, base-unit conversion, stock movement history, and weighted-average inventory cost.
 
-- supplier
-- multiple purchase lines
-- product
-- purchase unit
-- quantity
-- total cost per line
-- purchase total
-- conversion to base quantity
-- weighted-average cost update
-- purchase history storage
-- stock movement storage
-
-Weighted-average formula:
+Formula:
 
 `Old Inventory Value = Existing Stock × Existing Average Cost`
 
@@ -187,83 +167,68 @@ Weighted-average formula:
 
 ## Sell / Checkout
 
-Native Android supports:
+Native Android includes product search, native scan action, barcode/QR capture path, cart, selectable selling unit, stock validation, discount, cash/change, optional cash-customer name, credit/utang checkout, stock deduction, movement record, sale history, and automatic receipt generation after a successful sale.
 
-- product name/category/barcode search
-- native scan action
-- barcode/QR capture path
-- product lookup by assigned barcode
-- selectable selling unit
-- cart
-- piece and decimal quantity behavior
-- stock validation
-- discount
-- cash payment
-- cash received
-- automatic change
-- optional customer name for cash sale
-- credit/utang payment mode
-- saved credit customer selection
-- automatic stock deduction
-- stock movement creation
-- sale history creation
-- automatic receipt generation after successful checkout
-
-A receipt never creates a second sale. It only displays an already completed transaction.
+Receipt rendering never creates a second sale.
 
 ## Barcode and QR
 
-### Native Android
+Native Android development uses Google Code Scanner for barcode/QR capture.
 
-The development app uses Google Code Scanner for Android-native barcode/QR capture.
+- assigned barcode → scanner can find the item
+- no barcode → manual search/tap remains available
+- QR values can be captured
+- POSlite-generated product QR labels remain planned
 
-Behavior:
+The web reference keeps browser-based barcode scanning for workflow comparison.
 
-- assigned barcode -> scan can find/add product
-- no barcode -> search/tap product manually
-- QR values can be captured by the scanner path
-- POSlite-generated product QR label creation is not implemented yet
+## Credit and cash loans
 
-A later hardening phase may replace this with bundled CameraX + ML Kit scanning if scanner-model availability without Google Play services dependency is required.
+### Utang sa Paninda
 
-### Web reference
+Normal product credit remains part of POS sales:
 
-The web build keeps its browser scanner workflow for comparison/testing.
-
-## Credit / Utang
-
-Native Android supports:
-
-- customer records
-- optional contact
+- saved customer
 - outstanding balance
 - credit sale
-- payment recording
+- payment collection
 - credit ledger
 
-A credit sale counts as a sale when goods leave inventory. Later collection is not counted as new revenue again.
+A product-credit sale counts as Sales when the goods leave inventory. Later collection is not new Sales again.
 
-## Expenses
+### Pautang na Pera — web workflow prototype
 
-Native Android supports:
+Cash loans are deliberately separate from product sales.
 
-- category
-- description
-- amount
-- expense history
+The web prototype supports:
 
-Inventory purchases remain separate from operating expenses.
+- borrower
+- contact
+- principal / Pinautang
+- loan date
+- optional due date
+- notes
+- interest mode: not set yet / no interest / fixed interest
+- payment history
+- total returned
+- remaining amount
+- automatic Unpaid / Partial / Interest Pending / Fully Paid status
 
-## Analytics
+Accounting rule:
 
-Native Android selectable periods:
+- principal given out is not a sale
+- principal returned is not profit
+- only actual collected interest can be treated as loan interest income
 
-- 7 days
-- 30 days
-- 90 days
-- 365 days
+The approved cash-loan workflow will be ported into the native Android SQLite model after web UX review.
 
-Metrics:
+See `docs/CASH-LOANS.md`.
+
+## Expenses and analytics
+
+Operating expenses remain separate from inventory purchases.
+
+Core metrics:
 
 - Sales
 - COGS
@@ -278,116 +243,151 @@ Core calculations:
 
 `Estimated Net = Gross Profit - Recorded Operating Expenses`
 
+Cash-loan principal movements must not inflate Sales or Profit.
+
 ## Receipts
 
-Native receipts include:
+Native Android receipt content includes store information, transaction number, date/time, customer, payment type, items, quantity/unit, price, subtotal, discount, total, and cash/change or credit information.
 
-- store name/address
-- transaction number
-- date/time
-- customer
-- payment type
-- items
-- quantity/unit
-- unit price
-- line amount
-- subtotal
-- discount
-- total
-- cash/change or credit
+Current native receipt output:
 
-Native actions:
+- receipt history/view
+- direct native bitmap rendering
+- lightweight JPG generation
+- Save JPG
+- Share JPG
+- safe FileProvider sharing
+- save/share failures handled without relying on the previous WebView/PrintManager PDF path
 
-- view receipt
-- recent receipt history
-- Android Share
-- Android Print
-- Save as PDF through Android print destinations
-- 80 mm-oriented print layout
+On Android 10+ saved receipt images target `Pictures/POSlite`.
 
-Direct Bluetooth thermal-printer integration remains planned.
+Direct Bluetooth thermal-printer support remains planned.
 
-## GitHub development/mock data
+## Appearance and custom terminology — web workflow prototype
 
-`data/receipts.json` is development/mock data only.
+Settings now includes **Appearance & Custom Terms**.
 
-It is not the Android operational database. No GitHub personal access token is embedded in the Android APK or public web source.
+Appearance:
 
-## Web `.pos` backup
+- System — follow phone
+- Light mode
+- Dark mode
 
-The web reference currently supports `.pos` schema version 2 with products, units, purchases, movements, sales, customers, expenses, settings, and barcode values.
+Editable wording includes common concepts such as:
 
-Native Android `.pos` import/export compatibility is **not implemented yet** and is a current migration priority.
+- Sell → Benta
+- Sales → Halin
+- Products → Paninda
+- Purchases → Kumprada
+- Inventory → Stock ng Paninda
+- Credit → Utang
+- Expenses → Gastos
+- Analytics → Kita at Tubo
+- Gross Profit → Tubo sa Paninda
+- Net Profit → Natirang Tubo
+
+A Sari-sari preset and Standard preset are provided, and every term remains individually editable.
+
+Changing wording is presentation-only. It does not change internal IDs, database meaning, stock calculations, or accounting formulas.
+
+See `docs/CUSTOMIZATION.md`.
+
+## Reusable `.posconfig`
+
+The UI configuration can be exported/imported as `.posconfig` schema version 1.
+
+It contains only:
+
+- appearance theme preference
+- custom terminology
+- format/version metadata
+
+It does not contain products, purchases, sales, stock, customers, credit balances, cash loans, loan payments, expenses, receipts, or other business records.
+
+This separation allows one store's wording/theme template to be reused by another installation without copying operational data.
+
+Native Android should use the same config concepts/schema when the customization UI is ported.
+
+## Web `.pos` business backup
+
+`.pos` schema version 2 remains the web business-data backup for products, units, purchases, movements, sales, customers, expenses, settings, and barcode values.
+
+`.pos` and `.posconfig` serve different purposes:
+
+- `.pos` = business/operational data backup
+- `.posconfig` = reusable appearance and wording only
+
+Native Android `.pos` import/export compatibility remains planned.
+
+## Development/mock GitHub data
+
+`data/receipts.json` is development/mock data only and is not a live Android transaction database.
+
+No GitHub personal access token is embedded in the public web source or Android APK.
 
 ## Build validation
 
 Native workflow: `.github/workflows/android-native-build.yml`
 
-The verified baseline run #8 successfully completed:
+The first complete native APK baseline was build #8. The JPG-receipt hotfix was subsequently verified in native build #12, including APK artifact upload.
 
-1. repository checkout
-2. JDK 17 setup
-3. current Android SDK command-line tools setup
-4. `platforms;android-37.0` installation
-5. Gradle 9.6 setup
-6. `:app:assembleDebug`
-7. `app-debug.apk` artifact upload
+Web workflow: `.github/workflows/validate.yml`
 
-Artifact name: `POSlite-native-debug`
+It checks JavaScript syntax and required project/documentation assets including scanner, receipt, cash-loan, and preferences modules.
 
-The native build artifact was approximately 12.3 MB.
-
-Future native source changes should pass this workflow before replacing the verified native baseline.
+Future source changes should pass the applicable workflow before being treated as a verified baseline.
 
 ## Current milestone status
 
-Completed at source/build level:
+Native source/build level:
 
-- native Compose application
-- native SQLite data layer
+- Compose application
+- local SQLite POS data layer
 - products/no-barcode/unit conversions
 - purchases/weighted-average costing
-- Sell/cart/cash/change/utang
+- Sell/cart/cash/change/product credit
 - inventory adjustments
-- credit customers/payments
-- expenses
-- analytics
+- expenses and analytics
 - barcode/QR capture integration
-- native receipt generation/history/share/print
-- successful debug APK build
+- JPG receipt generation/save/share
+- successful debug APK builds
 
-Still requires real-device validation:
+Web workflow-validation additions:
 
-- install APK on target Android phone
-- perform full sample purchase/sale workflow
-- verify barcode scan behavior on hardware
-- verify receipt Print/Save PDF on hardware
-- verify local SQLite persistence across app restarts
-- assess portrait phone UX and performance
+- cash-loan operation
+- simple sari-sari terminology
+- Light/Dark/System appearance
+- customizable wording
+- reusable `.posconfig`
 
-## Remaining native work
+Still requires native/device work:
 
+- real Android phone end-to-end transaction testing
+- native cash-loan port after web workflow approval
+- native appearance/custom-term settings and `.posconfig` import/export
 - Android `.pos` import/export
-- POSlite QR label generation
+- product QR label generation
 - direct Bluetooth thermal-printer support
 - hold/resume sale
 - void/refund/return
 - damaged/expired stock workflow
 - encrypted/protected backups
-- optional fully bundled offline scanner
-- background repository/coroutine layer for database work after workflow validation
-- release signing/versioning after development stabilizes
+- optional fully bundled scanner
+- release signing/versioning after stabilization
 
 ## Documentation index
 
-- `docs/PROJECT.md` — master project status and rules
-- `docs/ANDROID-NATIVE.md` — detailed native Android architecture/build status
-- `docs/BARCODE-SCANNER.md` — web scanner implementation notes
+- `docs/PROJECT.md` — master status/rules
+- `docs/ANDROID-NATIVE.md` — native architecture/build status
+- `docs/BARCODE-SCANNER.md` — scanner notes
 - `docs/NO-BARCODE-PRODUCTS.md` — no-barcode behavior
 - `docs/RECEIPTS.md` — receipt behavior
+- `docs/CASH-LOANS.md` — cash-loan workflow and accounting rules
+- `docs/CUSTOMIZATION.md` — themes, custom terms, `.posconfig`
+- `docs/PATCH-NOTES.md` — development patch summary
 - `CHANGELOG.md` — implementation history
-- `README.md` — repository overview and current status
+- `README.md` — repository overview
 
 ## Design principle
 
-POSlite should prioritize **speed, clarity, accurate stock, and understandable profit**. Common sari-sari store transactions should take as few taps as practical while preserving trustworthy purchase, inventory, credit, expense, receipt, cost, and sales records.
+POSlite should prioritize **speed, clarity, accurate stock, and understandable profit**. Common sari-sari store transactions should use familiar words and as few taps as practical while preserving trustworthy accounting and transaction records.
