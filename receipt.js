@@ -57,6 +57,7 @@
   }
 
   function resolveCustomerName(sale) {
+    if (String(sale?.customerName || '').trim()) return String(sale.customerName).trim();
     if (sale.paymentType === 'credit' && sale.customerId) {
       const customer = typeof state !== 'undefined'
         ? state.customers.find(c => c.id === sale.customerId)
@@ -64,6 +65,22 @@
       return customer?.name || 'Credit Customer';
     }
     return capturedCustomerName || 'Walk-in Customer';
+  }
+
+  async function persistReceiptMetadata(sale) {
+    if (!sale) return sale;
+    const customerName = resolveCustomerName(sale);
+    sale.customerName = customerName;
+    sale.receiptVersion = 1;
+    sale.receiptIssuedAt = sale.receiptIssuedAt || new Date().toISOString();
+    if (typeof put === 'function') {
+      try {
+        await put('sales', sale);
+      } catch (err) {
+        console.warn('Receipt metadata could not be persisted.', err);
+      }
+    }
+    return sale;
   }
 
   function renderReceipt(sale) {
@@ -112,11 +129,11 @@
       </footer>`;
   }
 
-  function showReceipt(sale) {
+  async function showReceipt(sale) {
     if (!sale) return;
-    activeSale = sale;
+    activeSale = await persistReceiptMetadata(sale);
     const dialog = ensureReceiptDialog();
-    dialog.querySelector('#receiptPrintable').innerHTML = renderReceipt(sale);
+    dialog.querySelector('#receiptPrintable').innerHTML = renderReceipt(activeSale);
     if (!dialog.open) dialog.showModal();
   }
 
