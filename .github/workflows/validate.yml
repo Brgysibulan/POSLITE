@@ -17,13 +17,17 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check app.js
+          node --check scanner.js
           node --check sw.js
       - name: Verify required project files
         run: |
           test -f index.html
           test -f styles.css
+          test -f scanner.css
           test -f app.js
+          test -f scanner.js
           test -f manifest.webmanifest
           test -f sw.js
           test -f docs/PROJECT.md
+          test -f docs/BARCODE-SCANNER.md
           test -f CHANGELOG.md
