@@ -193,6 +193,7 @@ These are documented intentionally and should not be mistaken for completed feat
 - `.pos` backups are not encrypted yet.
 - No automatic rotating backup system yet.
 - No barcode scanner yet.
+- No QR code scanner/generator yet.
 - No receipt printer integration yet.
 - No advanced parent-unit/tingi conversion yet.
 - No supplier module yet.
@@ -200,6 +201,35 @@ These are documented intentionally and should not be mistaken for completed feat
 - No void/refund workflow yet.
 - No multi-user/PIN permissions yet.
 - No native Android implementation yet.
+
+## Planned Barcode and QR Code support
+
+Barcode and QR Code support are official POSlite roadmap features. They are not yet implemented in v0.1.0.
+
+### Barcode plan
+
+- Add an optional barcode field to each product.
+- Allow manual barcode entry during product creation/editing.
+- Search and identify products by barcode in the POS screen.
+- Support camera-based barcode scanning where the web platform allows it.
+- Preserve compatibility with external USB/Bluetooth barcode scanners that behave like keyboard input where possible.
+- Keep manual product search available as a fallback when a scanner is unavailable.
+
+### QR Code plan
+
+- Add optional QR-based product identification.
+- Allow camera-based QR scanning for quick product lookup where supported.
+- Generate POSlite QR labels for products that do not have a manufacturer barcode.
+- Allow printable QR labels for store-created/custom products in a later release.
+- Optionally place a QR code on receipts containing a POSlite transaction/reference ID for quick transaction lookup; sensitive transaction data should not be embedded directly in the QR code.
+- Keep QR features fully usable without cloud services whenever technically possible.
+
+### Shared scanning behavior
+
+- Barcode and QR scans should add or locate products quickly without changing the normal POS workflow.
+- Duplicate code values must be prevented or clearly flagged.
+- Product code data must be included in `.pos` backup/restore once the feature is implemented.
+- The future native Android version should preserve the same product barcode/QR data model and add stronger native camera/scanner integration.
 
 ## Planned development path
 
@@ -224,7 +254,11 @@ These are documented intentionally and should not be mistaken for completed feat
 
 - Receipt layout
 - Printable receipt
-- Barcode support where available
+- Product barcode field and barcode lookup
+- Barcode scanner support where available
+- QR code product lookup/scanning
+- POSlite QR label generation for custom/unbarcoded products
+- Optional receipt transaction-reference QR code
 - Improved report exports
 - Protected/password-based `.pos` backup design
 
