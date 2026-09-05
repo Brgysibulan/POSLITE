@@ -36,6 +36,19 @@ To protect existing development data and build compatibility, some internal tech
 
 The web title/branding and Android launcher label use **SariPOS**. The repository name remains `POSLITE` for now so existing GitHub Pages/build links are not broken.
 
+## About SariPOS
+
+The web Settings screen now includes **About SariPOS** so a store owner can quickly understand what the app is for without reading technical documentation.
+
+Purpose shown in the app:
+
+- SariPOS is made for sari-sari stores and small retailers using a smartphone.
+- It helps record and monitor Benta/Halin, Kumprada, Paninda/Stock, Utang, Gastos, Resibo, and Kita/Tubo in one simple system.
+- The design direction is Android-first, smartphone-friendly, offline/local-first, and uses familiar store language.
+- Creator credit shown in Settings: **Created & Developed by Joshua Apal Pudi**.
+
+The About card is currently implemented in the web workflow-validation build through `about.js`. The same About content should be included when the native Android Settings/customization screen is fully ported.
+
 ## Platform strategy
 
 SariPOS started as a web/PWA workflow prototype. Native Android development is active under `android-native/`.
@@ -345,7 +358,7 @@ The first complete native APK baseline was build #8. The JPG-receipt hotfix was 
 
 Web workflow: `.github/workflows/validate.yml`
 
-It checks JavaScript syntax and required project/documentation assets including scanner, receipt, cash-loan, preferences, and SariPOS branding modules.
+It checks JavaScript syntax and required project/documentation assets including scanner, receipt, cash-loan, preferences, SariPOS branding, and About modules.
 
 Future source changes should pass the applicable workflow before being treated as a verified baseline.
 
@@ -369,6 +382,7 @@ Web workflow-validation additions:
 
 - SariPOS user-facing branding
 - default sari-sari-friendly wording for new users
+- About SariPOS purpose/creator card
 - cash-loan operation
 - simple sari-sari terminology
 - Light/Dark/System appearance
@@ -379,6 +393,7 @@ Still requires native/device work:
 
 - real Android phone end-to-end transaction testing
 - finish replacing remaining old development-name text inside native Compose screens
+- port About SariPOS to native Settings together with the customization UI
 - native cash-loan port after web workflow approval
 - native appearance/custom-term settings and `.posconfig` import/export
 - Android `.pos` import/export
