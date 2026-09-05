@@ -21,6 +21,7 @@ jobs:
           node --check no-barcode.js
           node --check receipt.js
           node --check cash-loans.js
+          node --check preferences.js
           node --check sw.js
       - name: Verify required project files
         run: |
@@ -29,11 +30,13 @@ jobs:
           test -f scanner.css
           test -f receipt.css
           test -f cash-loans.css
+          test -f preferences.css
           test -f app.js
           test -f scanner.js
           test -f no-barcode.js
           test -f receipt.js
           test -f cash-loans.js
+          test -f preferences.js
           test -f data/receipts.json
           test -f manifest.webmanifest
           test -f sw.js
@@ -42,5 +45,6 @@ jobs:
           test -f docs/NO-BARCODE-PRODUCTS.md
           test -f docs/RECEIPTS.md
           test -f docs/CASH-LOANS.md
+          test -f docs/CUSTOMIZATION.md
           test -f docs/PATCH-NOTES.md
           test -f CHANGELOG.md
