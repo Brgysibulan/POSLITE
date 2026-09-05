@@ -1,8 +1,10 @@
-# POSlite Project Documentation
+# SariPOS Project Documentation
 
 ## Project identity
 
-**Name:** POSlite  
+**Name:** SariPOS  
+**Former development name:** POSlite  
+**Repository:** `Brgysibulan/POSLITE` (kept for compatibility; not renamed yet)  
 **Current phase:** Native Android development + Android-first web workflow validation  
 **Web reference version:** v0.2.0 plus documented development modules  
 **Native Android development version:** v0.3.0-native-dev  
@@ -12,7 +14,7 @@
 
 ## Mandatory project rule
 
-All POSlite development work must be documented alongside implementation. This includes features, changes, decisions, database/storage behavior, UI changes, config/backup formats, analytics rules, bug fixes, build milestones, current limitations, and next steps.
+All SariPOS development work must be documented alongside implementation. This includes features, changes, decisions, database/storage behavior, UI changes, config/backup formats, analytics rules, bug fixes, build milestones, current limitations, and next steps.
 
 Master references:
 
@@ -22,11 +24,21 @@ Master references:
 
 ## Product goal
 
-POSlite is a lightweight, offline-first POS for sari-sari stores and small retail businesses. The final product is Android-smartphone-first and should minimize technical/accounting wording in everyday operation while keeping correct stock, purchasing, sales, credit/utang, cash-loan, expense, receipt, and profit records.
+SariPOS is a lightweight, offline-first POS for sari-sari stores and small retail businesses. The final product is Android-smartphone-first and should minimize technical/accounting wording in everyday operation while keeping correct stock, purchasing, sales, credit/utang, cash-loan, expense, receipt, and profit records.
+
+Default user-facing language is sari-sari-store friendly. New web users start with familiar terms such as **Benta, Halin, Paninda, Kumprada, Utang, Gastos,** and **Tubo**, while the wording remains customizable.
+
+## Branding and compatibility rule
+
+The user-facing app/product name is **SariPOS**.
+
+To protect existing development data and build compatibility, some internal technical identifiers may continue using the old `POSlite`/`poslite` name until a controlled migration is implemented. Examples include package names, local database filenames, local-storage keys, legacy backup/config format identifiers, and repository path. These are implementation details and should not be shown as the main product name in the UI.
+
+The web title/branding and Android launcher label use **SariPOS**. The repository name remains `POSLITE` for now so existing GitHub Pages/build links are not broken.
 
 ## Platform strategy
 
-POSlite started as a web/PWA workflow prototype. Native Android development is active under `android-native/`.
+SariPOS started as a web/PWA workflow prototype. Native Android development is active under `android-native/`.
 
 The root web application remains a fast test/reference build so store workflows can be reviewed before they are hardened in native Android. The native app is not a WebView wrapper; it uses Kotlin, Jetpack Compose, and an Android-local SQLite database.
 
@@ -178,7 +190,7 @@ Native Android development uses Google Code Scanner for barcode/QR capture.
 - assigned barcode → scanner can find the item
 - no barcode → manual search/tap remains available
 - QR values can be captured
-- POSlite-generated product QR labels remain planned
+- SariPOS-generated product QR labels remain planned
 
 The web reference keeps browser-based barcode scanning for workflow comparison.
 
@@ -259,13 +271,13 @@ Current native receipt output:
 - safe FileProvider sharing
 - save/share failures handled without relying on the previous WebView/PrintManager PDF path
 
-On Android 10+ saved receipt images target `Pictures/POSlite`.
+On Android 10+ saved receipt images currently target the compatibility folder `Pictures/POSlite`; this internal path can be migrated later without affecting the SariPOS user-facing name.
 
 Direct Bluetooth thermal-printer support remains planned.
 
 ## Appearance and custom terminology — web workflow prototype
 
-Settings now includes **Appearance & Custom Terms**.
+Settings now includes a user-friendly **Itsura at Mga Tawag** area.
 
 Appearance:
 
@@ -286,7 +298,7 @@ Editable wording includes common concepts such as:
 - Gross Profit → Tubo sa Paninda
 - Net Profit → Natirang Tubo
 
-A Sari-sari preset and Standard preset are provided, and every term remains individually editable.
+A Sari-sari preset and Standard preset are provided, and every term remains individually editable. New users default to the Sari-sari preset; existing saved preferences are preserved.
 
 Changing wording is presentation-only. It does not change internal IDs, database meaning, stock calculations, or accounting formulas.
 
@@ -333,7 +345,7 @@ The first complete native APK baseline was build #8. The JPG-receipt hotfix was 
 
 Web workflow: `.github/workflows/validate.yml`
 
-It checks JavaScript syntax and required project/documentation assets including scanner, receipt, cash-loan, and preferences modules.
+It checks JavaScript syntax and required project/documentation assets including scanner, receipt, cash-loan, preferences, and SariPOS branding modules.
 
 Future source changes should pass the applicable workflow before being treated as a verified baseline.
 
@@ -350,10 +362,13 @@ Native source/build level:
 - expenses and analytics
 - barcode/QR capture integration
 - JPG receipt generation/save/share
+- Android launcher label renamed to SariPOS
 - successful debug APK builds
 
 Web workflow-validation additions:
 
+- SariPOS user-facing branding
+- default sari-sari-friendly wording for new users
 - cash-loan operation
 - simple sari-sari terminology
 - Light/Dark/System appearance
@@ -363,6 +378,7 @@ Web workflow-validation additions:
 Still requires native/device work:
 
 - real Android phone end-to-end transaction testing
+- finish replacing remaining old development-name text inside native Compose screens
 - native cash-loan port after web workflow approval
 - native appearance/custom-term settings and `.posconfig` import/export
 - Android `.pos` import/export
@@ -390,4 +406,4 @@ Still requires native/device work:
 
 ## Design principle
 
-POSlite should prioritize **speed, clarity, accurate stock, and understandable profit**. Common sari-sari store transactions should use familiar words and as few taps as practical while preserving trustworthy accounting and transaction records.
+SariPOS should prioritize **speed, clarity, accurate stock, and understandable profit**. Common sari-sari store transactions should use familiar words and as few taps as practical while preserving trustworthy accounting and transaction records.
