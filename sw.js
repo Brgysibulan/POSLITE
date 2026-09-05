@@ -1,5 +1,5 @@
-const CACHE='poslite-v0.2.0';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./manifest.webmanifest'];
+const CACHE='poslite-v0.2.0-scan1';
+const ASSETS=['./','./index.html','./styles.css','./scanner.css','./app.js','./scanner.js','./manifest.webmanifest'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
