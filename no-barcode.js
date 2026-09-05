@@ -87,19 +87,36 @@
     script.async = false;
     script.dataset.poslitePreferencesScript = '1';
     script.addEventListener('load', () => {
-      if (document.querySelector('script[data-saripos-brand-script]')) return;
+      if (!document.querySelector('script[data-saripos-brand-script]')) {
+        const brand = document.createElement('script');
+        brand.src = './brand.js';
+        brand.async = false;
+        brand.dataset.sariposBrandScript = '1';
+        document.body.appendChild(brand);
+      }
+      if (!document.querySelector('script[data-saripos-about-script]')) {
+        const about = document.createElement('script');
+        about.src = './about.js';
+        about.async = false;
+        about.dataset.sariposAboutScript = '1';
+        document.body.appendChild(about);
+      }
+    }, { once: true });
+    document.body.appendChild(script);
+  } else {
+    if (!document.querySelector('script[data-saripos-brand-script]')) {
       const brand = document.createElement('script');
       brand.src = './brand.js';
       brand.async = false;
       brand.dataset.sariposBrandScript = '1';
       document.body.appendChild(brand);
-    }, { once: true });
-    document.body.appendChild(script);
-  } else if (!document.querySelector('script[data-saripos-brand-script]')) {
-    const brand = document.createElement('script');
-    brand.src = './brand.js';
-    brand.async = false;
-    brand.dataset.sariposBrandScript = '1';
-    document.body.appendChild(brand);
+    }
+    if (!document.querySelector('script[data-saripos-about-script]')) {
+      const about = document.createElement('script');
+      about.src = './about.js';
+      about.async = false;
+      about.dataset.sariposAboutScript = '1';
+      document.body.appendChild(about);
+    }
   }
 })();
