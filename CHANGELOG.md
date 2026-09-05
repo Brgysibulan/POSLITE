@@ -10,6 +10,8 @@ All notable SariPOS development changes are documented here. Historical entries 
 - New `brand.js` compatibility layer for web branding and friendlier store wording without changing existing database keys or operational records.
 - New web users default to sari-sari-store terminology such as **Benta, Halin, Paninda, Kumprada, Utang, Gastos,** and **Tubo** while still allowing full customization.
 - Android launcher label changed to **SariPOS** while keeping the existing package/theme identifiers for build compatibility.
+- New **Settings → About SariPOS** card explaining the app's purpose, Android-first/offline-friendly design goal, and creator credit: **Joshua Apal Pudi**.
+- New `about.js` module for the web About card, included in offline caching and CI validation.
 - Web development prototype for **Pautang na Pera / Cash Loans**, kept separate from product-credit/utang sales.
 - Cash-loan borrower, principal, optional contact, loan date, optional due date, notes, payment history, and automatic Unpaid / Partial / Interest Pending / Fully Paid status.
 - Cash-loan interest modes: not set yet, no interest, or fixed interest amount.
@@ -20,7 +22,7 @@ All notable SariPOS development changes are documented here. Historical entries 
 - One-tap **Sari-sari Terms** and **Standard Terms** presets.
 - Reusable `.posconfig` export/import containing only appearance and terminology, with no sales, products, stock, customers, loans, or other business records.
 - `docs/CASH-LOANS.md` and `docs/CUSTOMIZATION.md` documentation.
-- `preferences.js`, `preferences.css`, and `brand.js` cached for offline web use.
+- `preferences.js`, `preferences.css`, `brand.js`, and `about.js` cached for offline web use.
 
 ### Changed
 
@@ -32,7 +34,7 @@ All notable SariPOS development changes are documented here. Historical entries 
 - Cash-loan principal repayments are kept outside Sales and Profit; only actual collected interest is treated as loan interest income.
 - Native Android receipt output changed from the WebView/Android PrintManager/PDF path to native Android bitmap/JPG generation.
 - Native receipt JPG uses lightweight compression and safe Android sharing/storage handling.
-- Web Service Worker cache now includes cash-loan, appearance/custom-term, and SariPOS branding assets.
+- Web Service Worker cache now includes cash-loan, appearance/custom-term, SariPOS branding, and About assets.
 
 ### Fixed
 
