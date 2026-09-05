@@ -19,18 +19,23 @@ jobs:
           node --check app.js
           node --check scanner.js
           node --check no-barcode.js
+          node --check receipt.js
           node --check sw.js
       - name: Verify required project files
         run: |
           test -f index.html
           test -f styles.css
           test -f scanner.css
+          test -f receipt.css
           test -f app.js
           test -f scanner.js
           test -f no-barcode.js
+          test -f receipt.js
+          test -f data/receipts.json
           test -f manifest.webmanifest
           test -f sw.js
           test -f docs/PROJECT.md
           test -f docs/BARCODE-SCANNER.md
           test -f docs/NO-BARCODE-PRODUCTS.md
+          test -f docs/RECEIPTS.md
           test -f CHANGELOG.md
