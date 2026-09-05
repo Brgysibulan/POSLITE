@@ -3,10 +3,12 @@
 ## Project identity
 
 **Name:** POSlite  
-**Current phase:** Web-first MVP  
-**Current version:** v0.2.0  
-**Primary product direction:** Android smartphone-first  
-**Target platform after web stabilization:** Native Android
+**Current phase:** Native Android development + web reference stabilization  
+**Web reference version:** v0.2.0  
+**Native Android development version:** v0.3.0-native-dev  
+**Primary platform:** Android smartphone  
+**First verified native APK baseline:** `9f4acb298eb71cb13da5dcb863c1749acca50507`  
+**Native build:** GitHub Actions run #8 — SUCCESS
 
 ## Project rule
 
@@ -16,41 +18,79 @@ Documentation must be updated alongside implementation.
 
 ## Product goal
 
-POSlite is a lightweight, offline-first point-of-sale system for sari-sari stores and small retail businesses. It is designed to work primarily from an Android smartphone, remain usable without permanent internet access, and accurately track inventory, purchases, sales, credit, expenses, and profit.
+POSlite is a lightweight, offline-first point-of-sale system for sari-sari stores and small retail businesses. It is designed primarily for Android smartphones, should remain usable without permanent internet access for day-to-day operation, and must accurately track inventory, purchases, sales, credit/utang, expenses, receipts, and profit.
 
-## Platform priority
+## Platform strategy
 
-The current web app is the workflow-validation and operational MVP. UI and business-flow decisions remain smartphone-first so they can transfer cleanly into the future native Android version.
+POSlite started as a web/PWA workflow prototype. The native Android implementation is now active under `android-native/`.
+
+The root web application is deliberately preserved as a stable reference/fallback while the Android APK is tested. The Android app is **not** a WebView wrapper; it is a native Kotlin/Jetpack Compose application with its own local SQLite database.
 
 Smartphone-first rules:
 
-- portrait-first layout
+- portrait-first workflow
 - large touch targets
 - bottom navigation for common actions
 - minimal typing
-- no dependency on mouse or keyboard
-- fast product search and scan-based selling
-- camera-ready barcode and QR workflows
+- scan-assisted selling
 - local/offline operational data
-- Android-friendly `.pos` import/export
-- mobile-friendly Analytics and reports
+- simple receipt generation and sharing
+- fast product lookup
+- clear stock/profit information
+- safe transaction history instead of destructive data behavior
 
-## Current architecture — v0.2.0
+## Architecture
 
-### Web application
+### Native Android — active development
+
+Location: `android-native/`
+
+Technology:
+
+- Kotlin
+- Jetpack Compose
+- Android SQLite through `SQLiteOpenHelper`
+- Android Print Framework
+- Android share intents
+- Google Code Scanner development integration
+- Android Gradle Plugin 9.4 built-in Kotlin
+- Gradle 9.6
+- JDK 17
+- Android 17/API 37 compile SDK
+- target SDK 36
+- minimum SDK 26
+
+Native database file: `poslite-native.db`
+
+Tables:
+
+1. `products`
+2. `product_units`
+3. `sales`
+4. `sale_items`
+5. `purchases`
+6. `purchase_items`
+7. `stock_movements`
+8. `customers`
+9. `credit_ledger`
+10. `expenses`
+11. `settings`
+
+### Web/PWA — stable reference
+
+Location: repository root
+
+Technology:
 
 - HTML
 - CSS
 - Vanilla JavaScript
-- IndexedDB for local operational data
-- Service Worker for cached/offline web assets
-- Web App Manifest for installable/PWA behavior
+- IndexedDB database version 2
+- Service Worker
+- Web App Manifest
+- `.pos` schema version 2 backup/restore
 
-No cloud database or external application framework is required for normal current operation.
-
-### IndexedDB database version 2
-
-Object stores:
+Web object stores:
 
 1. `products`
 2. `sales`
@@ -60,381 +100,294 @@ Object stores:
 6. `expenses`
 7. `settings`
 
-The database version was increased from 1 to 2 to add purchase and stock-movement records.
+The web and Android databases are intentionally separate during migration/testing.
 
-## Product and unit model
+## Core inventory model
 
-### Base-unit inventory
+### Base units
 
-Each product has one inventory base unit:
+Each product has one base inventory unit:
 
 - `pc` — piece
 - `g` — gram
 - `ml` — milliliter
 
-All sales and purchases are converted into base quantity before stock is changed. The base unit is locked after product creation in the current UI to reduce the risk of corrupting stock and historical conversions.
+Every purchase and sale is converted to base quantity before stock changes.
 
-### Multiple units and conversions
+### Multiple units
 
-Each selling/purchasing unit stores:
+A product can have multiple configured units. Each unit contains:
 
-- unit ID
 - label
-- base-unit conversion quantity
+- base quantity represented by one unit
 - selling price
-- sell-enabled flag
-- purchase-enabled flag
+- Sell enabled/disabled
+- Buy enabled/disabled
 
 Selling price is independent from conversion quantity.
 
 ### Candy example
 
-- base unit: piece
-- `Piece` = 1 piece
-- `Pack` = 50 pieces
+- base unit: `pc`
+- Piece = 1 piece
+- Pack = 50 pieces
 
-Purchasing 4 packs adds 200 pieces. Selling 3 pieces deducts 3 pieces. Selling one pack deducts 50 pieces from the same underlying inventory.
+Buying 4 packs adds 200 pieces. Selling 3 pieces deducts 3. Selling one pack deducts 50 from the same stock source.
 
 ### Rice example
 
-- base unit: gram
-- `250 g` = 250 grams
-- `500 g` = 500 grams
-- `1 kg` = 1,000 grams
-- `25 kg Sack` = 25,000 grams
+- base unit: `g`
+- 250 g = 250 grams
+- 500 g = 500 grams
+- 1 kg = 1,000 grams
+- 25 kg Sack = 25,000 grams
 
-Purchasing two 25 kg sacks adds 50,000 grams. Decimal cart quantities are supported for gram/milliliter products, so selling `1.25` of a 1 kg unit deducts 1,250 grams. Piece-based products remain whole-number based.
+Buying two 25 kg sacks adds 50,000 grams. Selling quantity 1.25 of a configured 1 kg unit deducts 1,250 grams.
 
-## Implemented features — v0.2.0
+## Product rules
 
-### Smartphone-first navigation
+Implemented in the native Android source:
 
-- Bottom navigation: Home, Sell, Products, Analytics, More
-- More drawer: Purchases, Inventory, Credit, Expenses, Reports, Settings
-- Responsive desktop/tablet fallback for testing
+- add product
+- edit product
+- optional unique barcode
+- explicit no-barcode product support
+- category
+- piece/gram/milliliter base unit
+- opening stock
+- opening cost per base unit
+- low-stock threshold
+- multiple selling/purchasing units
+- unit-specific selling price
+- delete guard for products already used by transactions
 
-### Dashboard / Home
+No-barcode products remain searchable and tappable in Sell and do not require fake barcode values.
 
-- Sales Today
-- Transaction count
-- Gross Profit Today
-- Total Credit
-- Low-stock list
-- Recent sales
-- Quick shortcuts for Sell, Stock In, Products, and Analytics
+## Purchases / Stock In
 
-### POS / Sell
+Native Android supports:
 
-- Product search
-- Category filtering
-- Barcode-aware search
-- Dedicated **Ready to Scan Barcode** panel
-- Exact barcode + Enter lookup for Bluetooth/USB/keyboard-style scanners
-- One-tap scanner-input focus
-- Automatic refocus after successful scanner input
-- Camera barcode scanning through browser `BarcodeDetector` when supported
-- Rear-camera preference on compatible Android browsers
-- Retail barcode formats including EAN, UPC, Code 128, Code 39, Codabar, and ITF where supported
-- Scan states for Ready, Scanned, Not Found, Out of Stock, unsupported browser, camera permission/error, and missing selling unit
-- Successful barcode match automatically adds the product using its first enabled selling unit
-- Products without barcodes remain sellable by search and touch selection
-- Product cards optimized for touch
-- Selling-unit selector per product
-- Cart
-- Whole-number quantity for piece products
-- Decimal quantity for gram/milliliter products
-- Stock-aware quantity limits using base quantities
-- Discount
-- Cash payment
-- Automatic change calculation
-- Credit/utang sale mode
-- Customer selection for credit
-- Complete Sale
-- Automatic stock deduction in base units
-- Historical item cost captured at time of sale
-- Stock movement entry per sold product
-
-### Products
-
-- Add product
-- Edit product
-- Delete only unused products
-- Product name
-- Category
-- Optional barcode
-- Explicit **Product has no barcode** option
-- Duplicate barcode validation
-- Base unit
-- Low-stock threshold in base quantity
-- Opening stock and opening cost for new products
-- Dynamic selling/purchasing unit conversions
-- Unit-specific selling price
-- Product Analytics detail shortcut
-- Existing v0.1 product records automatically normalized into the v0.2 model
-
-#### Products without barcodes
-
-When **Product has no barcode** is enabled:
-
-- the barcode input is disabled and cleared;
-- the product is stored with an empty barcode value;
-- no fake barcode is generated;
-- the item still works normally in purchases, inventory, costing, sales, credit, reports, analytics, and `.pos` backups;
-- the product is sold by searching its name/category or tapping its product card.
-
-An empty barcode remains the canonical representation for an unbarcoded product. This avoids a database migration and preserves v0.2 compatibility. See `docs/NO-BARCODE-PRODUCTS.md`.
-
-### Purchases / Stock In
-
-A purchase supports:
-
-- optional supplier name
-- purchase date
-- multiple line items
+- supplier
+- multiple purchase lines
 - product
 - purchase unit
 - quantity
-- total cost paid per line
-- automatic base-unit conversion
-- purchase reference
+- total cost per line
 - purchase total
+- conversion to base quantity
+- weighted-average cost update
+- purchase history storage
+- stock movement storage
 
-Saving a purchase converts each line to base quantity, increases stock, recalculates weighted-average cost, stores the purchase record, and creates stock-movement records.
-
-### Weighted-average inventory costing
+Weighted-average formula:
 
 `Old Inventory Value = Existing Stock × Existing Average Cost`
 
 `New Average Cost = (Old Inventory Value + New Purchase Cost) / (Existing Stock + Purchased Base Quantity)`
 
-Completed sales preserve the historical cost basis used at the time of the transaction.
+## Sell / Checkout
 
-### Inventory
+Native Android supports:
 
-- Current stock in base units with friendly kg/L display when appropriate
-- Low-stock and out-of-stock status
-- Inventory value using weighted-average cost
-- Manual Add / Remove / Set adjustment
-- Adjustment reason/note
-- Recent stock-movement ledger
+- product name/category/barcode search
+- native scan action
+- barcode/QR capture path
+- product lookup by assigned barcode
+- selectable selling unit
+- cart
+- piece and decimal quantity behavior
+- stock validation
+- discount
+- cash payment
+- cash received
+- automatic change
+- optional customer name for cash sale
+- credit/utang payment mode
+- saved credit customer selection
+- automatic stock deduction
+- stock movement creation
+- sale history creation
+- automatic receipt generation after successful checkout
 
-### Stock movement ledger
+A receipt never creates a second sale. It only displays an already completed transaction.
 
-Implemented movement types include:
+## Barcode and QR
 
-- opening stock/manual adjustment
-- purchase/stock in
-- sale
+### Native Android
 
-Movement records include date/time, product, movement type, base quantity change, reference ID when applicable, note, and relevant cost basis.
+The development app uses Google Code Scanner for Android-native barcode/QR capture.
 
-Future damaged, expired, refund, and return flows should reuse this ledger.
+Behavior:
 
-### Credit / Utang
+- assigned barcode -> scan can find/add product
+- no barcode -> search/tap product manually
+- QR values can be captured by the scanner path
+- POSlite-generated product QR label creation is not implemented yet
 
-- Customer records
-- Optional contact
-- Outstanding balance
-- Credit sale records
-- Partial/full payment
-- Payment ledger
-- Credit sale deducts inventory immediately
-- Credit sale counts as revenue when goods leave inventory
-- Later collection is not counted as another sale
-- Customer deletion blocked when linked history/balance exists
+A later hardening phase may replace this with bundled CameraX + ML Kit scanning if scanner-model availability without Google Play services dependency is required.
 
-### Expenses
+### Web reference
 
-- Date
-- Category
-- Description
-- Amount
-- Today total
-- Current month total
-- Delete expense
+The web build keeps its browser scanner workflow for comparison/testing.
+
+## Credit / Utang
+
+Native Android supports:
+
+- customer records
+- optional contact
+- outstanding balance
+- credit sale
+- payment recording
+- credit ledger
+
+A credit sale counts as a sale when goods leave inventory. Later collection is not counted as new revenue again.
+
+## Expenses
+
+Native Android supports:
+
+- category
+- description
+- amount
+- expense history
 
 Inventory purchases remain separate from operating expenses.
 
-### Analytics
+## Analytics
 
-Selectable periods:
+Native Android selectable periods:
 
 - 7 days
 - 30 days
 - 90 days
 - 365 days
 
-Whole-store metrics:
+Metrics:
 
 - Sales
 - COGS
 - Gross Profit
-- Operating Expenses
-- Estimated Net Profit
+- Expenses
+- Estimated Net
 - Purchase Spend
-- Outstanding Credit insight
-- Low-stock insight
-- Highest-profit product
-- Highest-sales product
-- Sales trend
 
 Core calculations:
 
-`Gross Profit = Sales Revenue - COGS`
+`Gross Profit = Sales - COGS`
 
-`Estimated Net Profit = Gross Profit - Recorded Operating Expenses`
+`Estimated Net = Gross Profit - Recorded Operating Expenses`
 
-### Product Profitability
+## Receipts
 
-Per product:
+Native receipts include:
 
-- quantity sold in base units
-- sales revenue
-- COGS
-- gross profit
-- margin percentage
+- store name/address
+- transaction number
+- date/time
+- customer
+- payment type
+- items
+- quantity/unit
+- unit price
+- line amount
+- subtotal
+- discount
+- total
+- cash/change or credit
 
-Transaction discounts are allocated proportionally across items for product-level profitability.
+Native actions:
 
-Product detail includes current stock, average cost, sales, COGS, profit, margin, quantity sold, purchased quantity, purchase spend, barcode/no-barcode state, and configured units.
+- view receipt
+- recent receipt history
+- Android Share
+- Android Print
+- Save as PDF through Android print destinations
+- 80 mm-oriented print layout
 
-### Reports
+Direct Bluetooth thermal-printer integration remains planned.
 
-Date-range reports calculate Sales, COGS, Gross Profit, Expenses, Estimated Net, Purchase Spend, and transaction-level sales/profit. CSV export includes transaction date, reference, payment type, items, sales, COGS, and gross profit.
+## GitHub development/mock data
 
-## Barcode implementation status
+`data/receipts.json` is development/mock data only.
 
-Implemented:
+It is not the Android operational database. No GitHub personal access token is embedded in the Android APK or public web source.
 
-- optional product barcode
-- explicit no-barcode product option
-- duplicate barcode validation
-- barcode included in product search
-- exact barcode + Enter lookup
-- dedicated scanner-ready input panel
-- automatic repeat-scan refocus
-- browser camera barcode scanning when `BarcodeDetector` is supported
-- rear-camera preference
-- scan success/error/not-found/out-of-stock feedback
-- automatic add-to-cart after successful barcode detection
-- barcode data in `.pos` schema 2 backups
+## Web `.pos` backup
 
-Compatibility behavior:
+The web reference currently supports `.pos` schema version 2 with products, units, purchases, movements, sales, customers, expenses, settings, and barcode values.
 
-- unsupported camera browsers fall back to scanner input/manual search;
-- products without barcodes use normal search/tap selling;
-- no-barcode products do not require generated fake codes.
+Native Android `.pos` import/export compatibility is **not implemented yet** and is a current migration priority.
 
-See `docs/BARCODE-SCANNER.md` and `docs/NO-BARCODE-PRODUCTS.md`.
+## Build validation
 
-## QR Code plan
+Native workflow: `.github/workflows/android-native-build.yml`
 
-QR remains an official roadmap item and is not yet implemented.
+The verified baseline run #8 successfully completed:
 
-Planned:
+1. repository checkout
+2. JDK 17 setup
+3. current Android SDK command-line tools setup
+4. `platforms;android-37.0` installation
+5. Gradle 9.6 setup
+6. `:app:assembleDebug`
+7. `app-debug.apk` artifact upload
 
-- camera QR scanning
-- QR product lookup
-- POSlite-generated QR labels for custom/unbarcoded products when desired
-- printable QR labels
-- optional receipt/reference QR
-- offline operation wherever technically possible
+Artifact name: `POSlite-native-debug`
 
-Sensitive transaction data should not be embedded directly in receipt QR. A local POSlite reference ID is preferred.
+The native build artifact was approximately 12.3 MB.
 
-## `.pos` backup and restore — schema version 2
+Future native source changes should pass this workflow before replacing the verified native baseline.
 
-Current identifier:
+## Current milestone status
 
-- `format: POSlite`
-- `schemaVersion: 2`
-- `backupType: full`
-- `appVersion: 0.2.0`
+Completed at source/build level:
 
-The backup contains store settings, products, units/conversions, barcode values including empty values for no-barcode products, inventory/cost state, sales, purchases, stock movements, customers/credit history, and expenses.
+- native Compose application
+- native SQLite data layer
+- products/no-barcode/unit conversions
+- purchases/weighted-average costing
+- Sell/cart/cash/change/utang
+- inventory adjustments
+- credit customers/payments
+- expenses
+- analytics
+- barcode/QR capture integration
+- native receipt generation/history/share/print
+- successful debug APK build
 
-Schema-1 backups remain accepted and legacy products are normalized to the v0.2 model.
+Still requires real-device validation:
 
-Current limitation: `.pos` backups are not encrypted yet.
+- install APK on target Android phone
+- perform full sample purchase/sale workflow
+- verify barcode scan behavior on hardware
+- verify receipt Print/Save PDF on hardware
+- verify local SQLite persistence across app restarts
+- assess portrait phone UX and performance
 
-## Offline support
+## Remaining native work
 
-- No cloud database required for normal operation
-- IndexedDB stores business data locally
-- Service Worker caches core web files
-- Current cache version: `poslite-v0.2.0-scan2`
-- Cached scanner/no-barcode assets include `scanner.js`, `scanner.css`, and `no-barcode.js`
-- `.pos` files provide manual portable backup/restore
-
-## Quality assurance
-
-GitHub Actions workflow: `.github/workflows/validate.yml`
-
-It runs on pushes to `main` and pull requests and currently:
-
-- syntax-checks `app.js`
-- syntax-checks `scanner.js`
-- syntax-checks `no-barcode.js`
-- syntax-checks `sw.js`
-- confirms required core files
-- confirms scanner and no-barcode documentation files
-- confirms project and changelog documentation
-
-## Important limitations of v0.2.0
-
-- Camera barcode scanning depends on browser `BarcodeDetector` support
-- No QR scanner/generator yet
-- No encrypted/password-protected `.pos` backups yet
-- No automatic rotating backup system yet
-- No supplier master/profile module yet; supplier is free text
-- No dedicated damaged/expired workflow yet; manual adjustment can record a reason
-- No hold/resume sale yet
-- No void/refund/return workflow yet
-- No receipt printer integration yet
-- No multi-user/PIN permission system yet
-- No native Android app implementation yet
-
-## Planned development path
-
-### v0.3
-
-- transaction safeguards and more validation
-- detailed sales history
-- richer purchase history
-- richer customer credit ledger
-- dedicated damaged/expired stock movements
-- product archive instead of destructive delete where appropriate
-- manual/custom sale items when needed
-- restock suggestions based on sales velocity
-- slow-moving/dead-stock Analytics
-- category profitability
-
-### v0.4
-
-- QR Code product scanning
+- Android `.pos` import/export
 - POSlite QR label generation
-- printable/mobile receipt layout
-- optional receipt transaction-reference QR
-- improved report exports
-- protected/password-based `.pos` backup design
-- broader camera barcode compatibility fallback if needed
+- direct Bluetooth thermal-printer support
+- hold/resume sale
+- void/refund/return
+- damaged/expired stock workflow
+- encrypted/protected backups
+- optional fully bundled offline scanner
+- background repository/coroutine layer for database work after workflow validation
+- release signing/versioning after development stabilizes
 
-### Web stable milestone
+## Documentation index
 
-- mobile UX cleanup
-- transaction/data integrity audit
-- v1/v2 `.pos` compatibility testing
-- phone-browser testing
-- barcode camera compatibility testing
-- offline/service-worker testing
-- documentation audit
-
-### Native Android phase
-
-After the web workflow is stable, create the native Android version using Kotlin, Jetpack Compose, Room/SQLite, Android file APIs for `.pos`, native camera APIs/libraries for barcode and QR scanning, and optional Bluetooth thermal-printer integration later.
-
-The Android version must preserve documented POSlite business behavior and data concepts rather than redesigning the system from zero.
+- `docs/PROJECT.md` — master project status and rules
+- `docs/ANDROID-NATIVE.md` — detailed native Android architecture/build status
+- `docs/BARCODE-SCANNER.md` — web scanner implementation notes
+- `docs/NO-BARCODE-PRODUCTS.md` — no-barcode behavior
+- `docs/RECEIPTS.md` — receipt behavior
+- `CHANGELOG.md` — implementation history
+- `README.md` — repository overview and current status
 
 ## Design principle
 
-POSlite should prioritize **speed, clarity, accurate stock, and understandable profit**. Common sari-sari store transactions should take as few taps as practical while preserving trustworthy purchase, inventory, credit, expense, cost, and sales records.
+POSlite should prioritize **speed, clarity, accurate stock, and understandable profit**. Common sari-sari store transactions should take as few taps as practical while preserving trustworthy purchase, inventory, credit, expense, receipt, cost, and sales records.
