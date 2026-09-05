@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:allowBackup="true"
-        android:label="POSlite"
+        android:label="SariPOS"
         android:supportsRtl="true"
         android:theme="@style/Theme.POSlite">
         <meta-data
