@@ -1,0 +1,9 @@
+{
+  "name": "POSlite",
+  "short_name": "POSlite",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6f8f7",
+  "theme_color": "#166534",
+  "description": "Offline-first point-of-sale system for small stores"
+}
