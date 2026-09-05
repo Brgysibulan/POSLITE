@@ -521,7 +521,7 @@ function addToCart(productId, unitId) {
   else state.cart.push({
     key, productId, unitId: u.id, name: p.name, unitLabel: u.label,
     price: num(u.sellPrice), cost: num(p.avgCostBase) * num(u.qtyBase),
-    qtyBasePerUnit: num(u.qtyBase), qty: 1
+    qtyBasePerUnit: num(u.qtyBase), qtyStep: p.baseUnit === 'pc' ? 1 : 0.01, qty: 1
   });
   renderCart();
 }
@@ -532,8 +532,8 @@ function renderCart() {
   const cash = num($('#cashInput').value);
   const change = Math.max(0, cash - total);
   $('#cartList').innerHTML = state.cart.length ? state.cart.map((i, index) => `<div class="cart-item">
-    <div><strong>${escapeHtml(i.name)}</strong><div class="muted">${escapeHtml(i.unitLabel)} · ${money(i.price)} × ${i.qty}</div></div>
-    <div class="cart-controls"><button data-cart="minus" data-index="${index}">−</button><strong>${i.qty}</strong><button data-cart="plus" data-index="${index}">+</button><button data-cart="remove" data-index="${index}">×</button></div>
+    <div><strong>${escapeHtml(i.name)}</strong><div class="muted">${escapeHtml(i.unitLabel)} · ${money(i.price)} × ${round4(i.qty)}</div></div>
+    <div class="cart-controls"><button data-cart="minus" data-index="${index}">−</button><input class="cart-qty-input" data-cart-qty="${index}" type="number" min="${i.qtyStep || 1}" step="${i.qtyStep || 1}" value="${round4(i.qty)}"><button data-cart="plus" data-index="${index}">+</button><button data-cart="remove" data-index="${index}">×</button></div>
   </div>`).join('') : '<div class="empty">Cart is empty.</div>';
   $('#cartSubtotal').textContent = money(subtotal);
   $('#cartTotal').textContent = money(total);
@@ -543,15 +543,34 @@ function renderCart() {
     const item = state.cart[index];
     if (!item) return;
     const p = state.products.find(x => x.id === item.productId);
+    const step = num(item.qtyStep || 1);
     if (b.dataset.cart === 'plus') {
-      if (cartBaseUsed(item.productId) + item.qtyBasePerUnit > num(p.stockBase)) return toast('Not enough stock.');
-      item.qty++;
+      if (cartBaseUsed(item.productId) + item.qtyBasePerUnit * step > num(p.stockBase)) return toast('Not enough stock.');
+      item.qty = round4(num(item.qty) + step);
     }
     if (b.dataset.cart === 'minus') {
-      item.qty--;
+      item.qty = round4(num(item.qty) - step);
       if (item.qty <= 0) state.cart.splice(index, 1);
     }
     if (b.dataset.cart === 'remove') state.cart.splice(index, 1);
+    renderCart();
+  });
+  $$('[data-cart-qty]').forEach(input => input.onchange = () => {
+    const index = num(input.dataset.cartQty);
+    const item = state.cart[index];
+    if (!item) return;
+    const p = state.products.find(x => x.id === item.productId);
+    const step = num(item.qtyStep || 1);
+    let wanted = Math.max(step, num(input.value));
+    if (step === 1) wanted = Math.max(1, Math.floor(wanted));
+    const otherBase = cartBaseUsed(item.productId) - num(item.qty) * num(item.qtyBasePerUnit);
+    const maxQty = Math.max(0, (num(p.stockBase) - otherBase) / num(item.qtyBasePerUnit));
+    if (wanted > maxQty) {
+      wanted = step === 1 ? Math.floor(maxQty) : Math.floor(maxQty / step) * step;
+      toast('Quantity adjusted to available stock.');
+    }
+    if (wanted <= 0) state.cart.splice(index, 1);
+    else item.qty = round4(wanted);
     renderCart();
   });
 }
