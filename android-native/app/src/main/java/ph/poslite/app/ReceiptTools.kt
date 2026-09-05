@@ -43,7 +43,7 @@ private data class ReceiptDrawLine(
 )
 
 fun receiptText(receipt: SaleReceipt, settings: StoreSettings): String = buildString {
-    appendLine(settings.storeName)
+    appendLine(settings.storeName.ifBlank { "SariPOS Store" })
     if (settings.address.isNotBlank()) appendLine(settings.address)
     appendLine("SALES RECEIPT")
     appendLine("Receipt: ${receipt.number}")
@@ -69,7 +69,7 @@ fun receiptText(receipt: SaleReceipt, settings: StoreSettings): String = buildSt
 }
 
 private fun receiptDrawLines(receipt: SaleReceipt, settings: StoreSettings): List<ReceiptDrawLine> = buildList {
-    add(ReceiptDrawLine(settings.storeName.ifBlank { "POSlite Store" }, size = 31f, bold = true, align = Align.CENTER))
+    add(ReceiptDrawLine(settings.storeName.ifBlank { "SariPOS Store" }, size = 31f, bold = true, align = Align.CENTER))
     if (settings.address.isNotBlank()) add(ReceiptDrawLine(settings.address, size = 18f, align = Align.CENTER, gapBefore = 2f))
     add(ReceiptDrawLine("SALES RECEIPT", size = 24f, bold = true, align = Align.CENTER, gapBefore = 12f))
     add(ReceiptDrawLine("Receipt: ${receipt.number}", gapBefore = 12f))
@@ -95,7 +95,7 @@ private fun receiptDrawLines(receipt: SaleReceipt, settings: StoreSettings): Lis
         add(ReceiptDrawLine("Credit / Utang  ${money(receipt.total)}", size = 21f, align = Align.RIGHT))
     }
     add(ReceiptDrawLine("Thank you!", size = 24f, bold = true, align = Align.CENTER, gapBefore = 18f))
-    add(ReceiptDrawLine("POSlite", size = 16f, align = Align.CENTER))
+    add(ReceiptDrawLine("SariPOS", size = 16f, align = Align.CENTER))
 }
 
 private fun configuredPaint(line: ReceiptDrawLine): Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -193,13 +193,13 @@ private fun writeJpg(bitmap: Bitmap, stream: OutputStream) {
 
 fun saveReceiptJpg(context: Context, receipt: SaleReceipt, settings: StoreSettings): Uri {
     val bitmap = renderReceiptBitmap(receipt, settings)
-    val fileName = "POSlite-${safeName(receipt.number)}.jpg"
+    val fileName = "SariPOS-${safeName(receipt.number)}.jpg"
     try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
                 put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
                 put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/POSlite")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/SariPOS")
                 put(MediaStore.Images.Media.IS_PENDING, 1)
             }
             val resolver = context.contentResolver
@@ -218,7 +218,7 @@ fun saveReceiptJpg(context: Context, receipt: SaleReceipt, settings: StoreSettin
             }
         }
 
-        val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "POSlite").apply { mkdirs() }
+        val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "SariPOS").apply { mkdirs() }
         val file = File(dir, fileName)
         writeJpg(bitmap, FileOutputStream(file))
         return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
@@ -231,7 +231,7 @@ private fun createShareReceiptJpg(context: Context, receipt: SaleReceipt, settin
     val bitmap = renderReceiptBitmap(receipt, settings)
     try {
         val dir = File(context.cacheDir, "receipts").apply { mkdirs() }
-        val file = File(dir, "POSlite-${safeName(receipt.number)}.jpg")
+        val file = File(dir, "SariPOS-${safeName(receipt.number)}.jpg")
         writeJpg(bitmap, FileOutputStream(file))
         return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
     } finally {
@@ -243,10 +243,10 @@ fun shareReceiptJpg(context: Context, receipt: SaleReceipt, settings: StoreSetti
     val uri = createShareReceiptJpg(context, receipt, settings)
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "image/jpeg"
-        putExtra(Intent.EXTRA_SUBJECT, "POSlite Receipt ${receipt.number}")
-        putExtra(Intent.EXTRA_TEXT, "POSlite receipt ${receipt.number} · ${money(receipt.total)}")
+        putExtra(Intent.EXTRA_SUBJECT, "SariPOS Receipt ${receipt.number}")
+        putExtra(Intent.EXTRA_TEXT, "SariPOS receipt ${receipt.number} · ${money(receipt.total)}")
         putExtra(Intent.EXTRA_STREAM, uri)
-        clipData = android.content.ClipData.newRawUri("POSlite receipt", uri)
+        clipData = android.content.ClipData.newRawUri("SariPOS receipt", uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(intent, "Share receipt JPG"))
