@@ -1,52 +1,76 @@
 # POSlite
 
-POSlite is an offline-first point-of-sale web application designed for sari-sari stores and similar micro-retail businesses.
+POSlite is an offline-first point-of-sale system designed for sari-sari stores and similar micro-retail businesses.
 
-## Current version
+## Current development status
 
-**Web MVP v0.2.0**
+- **Web reference:** v0.2.0 at repository root
+- **Native Android development:** v0.3.0-native-dev under `android-native/`
+- **Primary product direction:** Android smartphone-first
 
-POSlite is currently web-first for rapid development and testing, but the product direction is **Android smartphone-first**. The stable workflow and data model will later be carried into a native Android app.
+The existing web/PWA application remains the stable workflow reference while the native Android implementation is built and tested. The Android app is a real Kotlin/Jetpack Compose application, not a WebView wrapper.
 
-## Core features
+## Native Android stack
 
-- Smartphone-first responsive interface with mobile bottom navigation
-- Dashboard with daily sales, transactions, gross profit, credit balance, low-stock items, and recent sales
-- POS checkout with product search, barcode lookup readiness, unit selection, cart controls, discount, cash payment, automatic change, and credit/utang sales
-- Base-unit inventory model for piece, gram, and milliliter products
-- Multiple selling/purchasing units per product such as piece, pack, box, sachet, bottle, case, 250 g, 500 g, 1 kg, sack, and similar conversions
-- Decimal quantity selling for weight/liquid products, such as 1.25 kg of rice
-- Product barcode field with duplicate-code protection and exact barcode lookup by Enter/keyboard-style scanner input
-- Purchases / Stock In records with supplier, date, multiple line items, purchase unit, quantity, and total cost
-- Automatic stock addition from purchases
-- Weighted-average inventory costing after each purchase
-- Stock movement ledger for purchases, sales, opening stock, and manual adjustments
-- Customer credit/utang records and partial/full payment recording
-- Operating expense recording kept separate from inventory purchases
-- Analytics with Sales, COGS, Gross Profit, Expenses, Estimated Net Profit, and Purchase Spend
-- Product Profitability table with quantity sold, sales, cost, gross profit, and margin
-- Per-product detail view with stock, average cost, purchase totals, sales totals, profit, margin, barcode, and configured units
-- Date-range reports with Sales, COGS, Gross Profit, Expenses, Estimated Net, and Purchases
-- CSV report export
-- Portable `.pos` full backup and restore using POSlite schema version 2
-- Automatic compatibility migration for older v0.1 product records / schema-1 backups
-- IndexedDB local database and Service Worker offline caching
+- Kotlin
+- Jetpack Compose
+- Android SQLite (`poslite-native.db`)
+- Android Print Framework / Save as PDF
+- Android share intents
+- Google Code Scanner development integration for barcode/QR capture
+- Android Gradle Plugin 9.4
+- Gradle 9.6
+- JDK 17
+- Android 17/API 37 compile tooling
+
+## Native Android functions implemented in source
+
+- Home dashboard with sales today, transactions, gross profit, total credit, and low-stock count
+- Sell / checkout with search, native scan action, selling-unit selection, cart, discount, cash/change, and credit/utang
+- Optional customer name for cash sales and saved customer requirement for credit sales
+- Products with optional/no barcode, categories, piece/gram/milliliter base units, low-stock threshold, opening stock/cost, and multiple sell/buy unit conversions
+- Purchases / Stock In with supplier, multiple lines, unit conversions, weighted-average costing, and stock movements
+- Inventory with base-unit stock and Add / Remove / Set adjustments
+- Credit / Utang customers, balances, and payment recording
+- Expenses
+- Analytics for 7/30/90/365 days: Sales, COGS, Gross Profit, Expenses, Estimated Net, and Purchase Spend
+- Native receipt generation after successful checkout
+- Receipt history, Android Share, Print, and Save-as-PDF path with an 80 mm-oriented layout
+- Store settings stored locally in SQLite
+
+## Native Android database
+
+The Android app uses local SQLite rather than browser IndexedDB.
+
+Tables:
+
+- `products`
+- `product_units`
+- `sales`
+- `sale_items`
+- `purchases`
+- `purchase_items`
+- `stock_movements`
+- `customers`
+- `credit_ledger`
+- `expenses`
+- `settings`
+
+GitHub JSON files such as `data/receipts.json` are development/mock data only. No GitHub personal access token is embedded in the web or Android application.
 
 ## Inventory and unit model
 
-Each product has one **base unit**. Every purchase and sale is converted to that base unit before stock is changed.
+Every product has one base unit and every purchase/sale converts to that base quantity before inventory changes.
 
-Examples:
-
-### Candy
+### Candy example
 
 - Base unit: `piece`
 - Piece = 1 piece
 - Pack = 50 pieces
 
-If 4 packs are purchased, POSlite adds 200 pieces to inventory. Selling 3 pieces deducts 3; selling one pack deducts 50 from the same stock source.
+Buying 4 packs adds 200 pieces. Selling 3 pieces deducts 3; selling one pack deducts 50 from the same stock source.
 
-### Rice
+### Rice example
 
 - Base unit: `gram`
 - 250 g = 250 grams
@@ -54,104 +78,94 @@ If 4 packs are purchased, POSlite adds 200 pieces to inventory. Selling 3 pieces
 - 1 kg = 1,000 grams
 - 25 kg sack = 25,000 grams
 
-If two 25 kg sacks are purchased, POSlite adds 50,000 grams. Selling 1.25 of the configured 1 kg unit deducts 1,250 grams.
+Buying two 25 kg sacks adds 50,000 grams. Selling 1.25 of a configured 1 kg unit deducts 1,250 grams.
 
-Selling price is independent from conversion quantity, so a pack can have its own discounted selling price.
+Selling price remains independent from conversion quantity, so a pack or kilo can have its own selling price.
 
 ## Purchase costing and profit
 
-POSlite uses **weighted-average cost** for inventory purchases.
-
-When new stock is purchased at a different price, the current inventory value and incoming purchase value are combined to calculate a new average cost per base unit.
-
-Completed sales preserve their cost basis at the time of sale so future supplier-price changes do not rewrite old profit results.
-
-Core calculations:
+POSlite uses weighted-average inventory cost.
 
 `Gross Profit = Sales Revenue - Cost of Goods Sold (COGS)`
 
 `Estimated Net Profit = Gross Profit - Recorded Operating Expenses`
 
-Purchase spending is shown separately from operating expenses. Buying inventory increases stock; its cost becomes COGS when the inventory is sold.
+Inventory purchases are tracked separately from operating expenses. Their cost becomes COGS as inventory is sold. Credit/utang sales count when goods leave inventory; later collections are not counted again as new sales.
 
-Credit/utang sales count as sales when the goods leave the store. Later customer payments are collections and are not counted again as new sales.
+## Barcode / QR behavior
 
-## Offline data architecture
+### Native Android
 
-POSlite stores operational data locally using **IndexedDB**. No cloud database or user account is required for normal operation after the web app has been loaded/cached.
+The development app has a native scan action using Google Code Scanner. A scanned value is matched against the product barcode field and a matching product can be added to the cart.
 
-Local object stores in database version 2:
+Products without printed barcodes remain fully usable through name/category search and touch selection.
 
-- `products`
-- `sales`
-- `purchases`
-- `movements`
-- `customers`
-- `expenses`
-- `settings`
+The scanner can capture QR values as well, but POSlite-generated product QR label creation is still a separate planned feature.
 
-## `.pos` backup format
+### Web reference
 
-A `.pos` file is POSlite's portable backup package. In v0.2.0 it uses **schema version 2** and contains:
+The root web build keeps its browser-based scanner workflow and offline IndexedDB data for continued testing/comparison.
 
-- POSlite format identifier
-- schema version
-- app version
-- export date/time
-- store settings
-- products and unit conversions
-- barcode identifiers
-- current inventory/cost data
-- sales history
-- purchase history
-- stock movements
-- customers and credit records
-- expenses
+## Receipts
 
-The importer accepts schema version 1 and 2 backups. Older product data is normalized into the v0.2 base-unit structure during import/use.
+Native Android receipts include:
 
-> Important: `.pos` backups are not encrypted yet. Password-protected/encrypted backups remain planned.
+- store name/address
+- transaction number
+- date/time
+- customer
+- payment type
+- item name
+- quantity/unit
+- unit price
+- line amount
+- subtotal
+- discount
+- total
+- cash/change or credit
 
-## Barcode and QR status
+Receipts can be viewed from recent receipt history, shared through Android, or sent through Android Print / Save as PDF.
 
-### Barcode
+Direct Bluetooth thermal-printer integration remains a later native hardening feature.
 
-The v0.2 product model is barcode-ready:
+## Android build validation
 
-- optional barcode field
-- duplicate barcode validation
-- search by barcode
-- exact barcode + Enter lookup for keyboard-style scanner input
+Workflow: `.github/workflows/android-native-build.yml`
 
-Camera barcode scanning is not implemented yet.
+It configures the current Android toolchain, builds `:app:assembleDebug`, and uploads `app-debug.apk` as the `POSlite-native-debug` workflow artifact when successful.
 
-### QR Code
+A native source change is not treated as a stable Android baseline until this APK workflow passes.
 
-QR scanning and POSlite-generated QR labels remain planned features. They will be designed for offline Android smartphone use.
+## Web/PWA reference
 
-## Running the web version
+The root application remains available for GitHub Pages testing and workflow comparison. Its main architecture is:
 
-Serve the repository through GitHub Pages or another static HTTPS web server. No build process or external package installation is required.
+- HTML/CSS/Vanilla JavaScript
+- IndexedDB
+- Service Worker / PWA
+- `.pos` schema version 2 backup/restore
 
-Core files:
+This web build is intentionally preserved while the native Android app is stabilized.
 
-- `index.html` — application structure and mobile navigation
-- `styles.css` — smartphone/desktop responsive UI
-- `app.js` — IndexedDB, products, units, purchases, POS, stock ledger, Analytics, reports, and `.pos` backup logic
-- `manifest.webmanifest` — installable web app metadata
-- `sw.js` — offline asset caching
-- `docs/PROJECT.md` — master project plan and implementation documentation
-- `CHANGELOG.md` — version history
+## Remaining native priorities
 
-## Next priorities
+1. Get and keep the native debug APK workflow green.
+2. Test the APK on an actual Android phone.
+3. Add Android `.pos` import/export compatibility.
+4. Add POSlite-generated product QR labels.
+5. Harden scanner behavior; optionally move to a fully bundled CameraX + ML Kit scanner if complete offline model availability is required.
+6. Add direct Bluetooth thermal-printer integration.
+7. Add hold/resume, void/refund/return, and damaged/expired inventory workflows.
+8. Add encrypted/protected backups.
 
-1. Harden v0.2 transaction and migration testing.
-2. Add richer sales/purchase/credit detail histories.
-3. Add camera barcode scanning and QR Code support.
-4. Add printable/mobile receipt workflows and optional Bluetooth printer support later.
-5. Add protected/encrypted `.pos` backups.
-6. Stabilize the web workflow and convert it into a native Android application using Kotlin, Jetpack Compose, Room/SQLite, native file APIs, and native camera scanning.
+## Documentation
+
+- `docs/PROJECT.md` — master project documentation
+- `docs/ANDROID-NATIVE.md` — native Android architecture and migration status
+- `docs/BARCODE-SCANNER.md` — scanner behavior
+- `docs/RECEIPTS.md` — receipt behavior
+- `CHANGELOG.md` — implementation history
 
 ## Documentation rule
 
-Every implemented POSlite feature, change, technical decision, bug fix, database change, `.pos` format change, Analytics change, and project milestone must be documented alongside development. See `docs/PROJECT.md` and `CHANGELOG.md`.
+Every implemented POSlite feature, change, technical decision, bug fix, database change, backup-format change, Analytics change, and project milestone must be documented alongside development.
