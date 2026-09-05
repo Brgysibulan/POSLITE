@@ -1,0 +1,30 @@
+{
+  "environment": "development",
+  "purpose": "Mock GitHub-hosted receipt data structure for POSlite development and testing only.",
+  "warning": "The public web app does not write transactions directly to this GitHub file. Live browser writes would require credentials and are intentionally disabled. Runtime sales remain in local IndexedDB during development.",
+  "schemaVersion": 1,
+  "receiptSchema": {
+    "id": "receipt-id",
+    "saleId": "sale-id",
+    "transactionNumber": "POS-YYYYMMDDHHMMSS",
+    "createdAt": "ISO-8601 datetime",
+    "customerName": "Walk-in Customer",
+    "paymentType": "cash|credit",
+    "items": [
+      {
+        "productId": "product-id",
+        "name": "Product",
+        "unitLabel": "Piece",
+        "qty": 1,
+        "price": 0,
+        "lineTotal": 0
+      }
+    ],
+    "subtotal": 0,
+    "discount": 0,
+    "total": 0,
+    "cash": 0,
+    "change": 0
+  },
+  "receipts": []
+}
