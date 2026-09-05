@@ -5,6 +5,7 @@
 **Name:** POSlite  
 **Current phase:** Web-first MVP  
 **Current version:** v0.1.0  
+**Primary product direction:** Android smartphone-first  
 **Target platform after web stabilization:** Native Android
 
 ## Project rule
@@ -26,7 +27,25 @@ Documentation must be updated alongside implementation.
 
 ## Product goal
 
-POSlite is a lightweight, offline-first point-of-sale system for sari-sari stores and small retail businesses. It should remain easy to operate, responsive on mobile devices, and usable without a cloud account or permanent internet connection.
+POSlite is a lightweight, offline-first point-of-sale system for sari-sari stores and small retail businesses. It should remain easy to operate, responsive on smartphones, and usable without a cloud account or permanent internet connection.
+
+## Platform priority
+
+POSlite is designed primarily for smartphone operation, with Android as the main target platform.
+
+The current web application is the development and workflow-validation version. UI and business-flow decisions should remain smartphone-first so they can transfer cleanly to the native Android version.
+
+Smartphone-first rules:
+
+- portrait-first layout
+- large touch targets
+- minimal typing
+- no dependency on mouse or keyboard
+- fast search and scan-based selling
+- camera-ready barcode and QR workflows
+- local/offline data storage
+- Android-friendly `.pos` file import/export
+- mobile-friendly Analytics and reports
 
 ## Current architecture
 
@@ -196,11 +215,154 @@ These are documented intentionally and should not be mistaken for completed feat
 - No QR code scanner/generator yet.
 - No receipt printer integration yet.
 - No advanced parent-unit/tingi conversion yet.
+- No purchase/stock-in ledger yet.
 - No supplier module yet.
+- No per-item profitability engine based on purchase history yet.
 - No hold/resume sale yet.
 - No void/refund workflow yet.
 - No multi-user/PIN permissions yet.
 - No native Android implementation yet.
+
+## Planned unit conversion and purchase system
+
+POSlite must support products that are purchased in bulk but sold in smaller units.
+
+### Base-unit model
+
+Each product will have one inventory base unit. All purchases, sales, and stock adjustments will be converted to this base unit before inventory is changed.
+
+Examples:
+
+- Rice: base unit `gram`; sell as 250 g, 500 g, 1 kg, or custom weight; purchase as 25 kg or 50 kg sack.
+- Candy: base unit `piece`; sell by piece or pack; purchase by pack or box.
+- Coffee: base unit `sachet`; sell by sachet or pack.
+- Softdrink: base unit `bottle`; sell by bottle or case.
+- Cigarette: base unit `stick`; sell by stick, pack, or ream.
+
+Selling price and conversion quantity are separate. A pack may have a discounted selling price instead of simply being `piece price × quantity`.
+
+### Purchases / Stock In
+
+Purchasing inventory must create a purchase record instead of only increasing stock manually.
+
+A purchase record should include:
+
+- date
+- supplier when available
+- product
+- purchase quantity
+- purchase unit
+- conversion quantity to base units
+- unit purchase cost
+- total purchase cost
+- resulting base-unit quantity added to inventory
+
+Every purchase will also create a stock-movement entry.
+
+### Costing
+
+The planned default costing method is weighted-average cost for normal sari-sari store use.
+
+When a new batch is purchased at a different price, POSlite should calculate a new weighted-average cost from the value and quantity of existing stock plus the value and quantity of the new purchase.
+
+Historical completed sales should preserve the cost basis used at the time of sale so later cost changes do not rewrite old profit results.
+
+### Stock movement ledger
+
+Every inventory movement should be traceable, including:
+
+- purchase / stock in
+- sale
+- damaged item
+- expired item
+- manual adjustment
+- return or refund when implemented
+
+Credit/utang sales deduct inventory immediately because the goods already left the store. A later credit payment affects money/receivables, not inventory.
+
+## Planned profitability Analytics
+
+Profit analysis must work at both the individual-product level and the whole-store level.
+
+### Per-item profitability
+
+For every product and selected date range, Analytics should calculate:
+
+- quantity sold in base units
+- quantity sold grouped by selling unit where useful
+- sales revenue
+- cost of goods sold (COGS)
+- gross profit
+- gross margin percentage
+- average selling price
+- average cost
+- current stock quantity
+- current stock value
+- number of transactions containing the item
+- rank by revenue
+- rank by gross profit
+- sales trend
+
+Core calculation:
+
+`Gross Profit = Sales Revenue - Cost of Goods Sold`
+
+Example concept for candy:
+
+- 100 pieces sold × ₱2 = ₱200 revenue
+- recorded cost of sold pieces = ₱120
+- gross profit = ₱80
+
+The same product must still be analyzed correctly when some units were sold individually and others were sold as packs because all movements share one base-unit inventory source.
+
+### Whole-store profitability
+
+For a selected day, week, month, year, or custom range, Analytics should calculate:
+
+- total sales revenue
+- total COGS
+- total gross profit
+- recorded operating expenses
+- estimated net profit
+- total cash sales
+- total credit/utang sales
+- credit collections
+- outstanding credit balance
+- purchase spending
+- current inventory value
+- top products by sales
+- top products by gross profit
+- low-margin products
+- slow-moving/dead-stock products when enough history exists
+
+Core store calculations:
+
+`Gross Profit = Total Sales - Total COGS`
+
+`Estimated Net Profit = Gross Profit - Recorded Operating Expenses`
+
+Credit sales count as sales/profit when the sale occurs, while collections are tracked separately as cash inflow so they are not counted twice as new sales.
+
+### Product Profitability view
+
+Analytics should provide a mobile-friendly product list such as:
+
+`Product | Qty Sold | Revenue | COGS | Gross Profit | Margin`
+
+Tapping a product should open a product detail view with its purchase history, sales history, stock movements, and profitability trend.
+
+### Analytics filters
+
+Planned filters:
+
+- Today
+- Yesterday
+- This Week
+- This Month
+- This Year
+- Custom Date Range
+- Product
+- Category
 
 ## Planned Barcode and QR Code support
 
@@ -244,9 +406,12 @@ Barcode and QR Code support are official POSlite roadmap features. They are not 
 
 ### v0.3
 
-- Tingi/unit conversion system
+- Base-unit and tingi/unit conversion system
+- Purchases / Stock In records
 - Supplier records
-- Stock-in/purchase records
+- Weighted-average inventory costing
+- Product-level profitability Analytics
+- Store-level profitability Analytics
 - Restock suggestions based on sales history
 - Slow-moving/dead-stock Analytics
 
@@ -279,9 +444,10 @@ After the web workflow is stable, create a native Android version using:
 - Jetpack Compose
 - Room/SQLite
 - Android file APIs for `.pos`
+- Native camera APIs/libraries for barcode and QR scanning
 
 The Android version should preserve the documented behavior and data concepts of POSlite rather than redesigning the business logic from zero.
 
 ## Design principle
 
-POSlite should prioritize speed and clarity. Common sari-sari store transactions should require as few steps as practical, while preserving accurate inventory, credit, expense, and sales records.
+POSlite should prioritize speed and clarity. Common sari-sari store transactions should require as few steps as practical, while preserving accurate inventory, purchases, credit, expenses, cost, and sales records.
