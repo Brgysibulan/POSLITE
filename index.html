@@ -154,9 +154,9 @@
 
   <dialog id="formDialog">
     <form method="dialog" id="dialogForm" class="dialog-card">
-      <div class="panel-head"><h3 id="dialogTitle">Form</h3><button value="cancel" class="icon-btn" aria-label="Close">✕</button></div>
+      <div class="panel-head"><h3 id="dialogTitle">Form</h3><button type="button" class="icon-btn" aria-label="Close" onclick="document.getElementById('formDialog').close()">✕</button></div>
       <div id="dialogFields" class="form-grid"></div>
-      <div class="dialog-actions"><button value="cancel" class="secondary">Cancel</button><button id="dialogSaveBtn" value="default" class="primary">Save</button></div>
+      <div class="dialog-actions"><button type="button" class="secondary" onclick="document.getElementById('formDialog').close()">Cancel</button><button id="dialogSaveBtn" value="default" class="primary">Save</button></div>
     </form>
   </dialog>
 
