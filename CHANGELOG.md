@@ -16,6 +16,11 @@ All notable POSlite development changes are documented here.
 - Optional barcode field for products.
 - Duplicate barcode validation.
 - Barcode-aware search and exact barcode + Enter lookup for keyboard-style scanners.
+- Dedicated **Ready to Scan Barcode** panel on the Sell screen.
+- One-tap scanner-input focus for Bluetooth/USB barcode scanners, including automatic ready-state refocus after a successful scan.
+- Android-oriented phone camera barcode scanning using the browser `BarcodeDetector` API when supported, with rear-camera preference and retail barcode formats such as EAN, UPC, Code 128, Code 39, Codabar, and ITF.
+- Scan feedback states for waiting, successful add-to-cart, barcode not found, out-of-stock, missing selling unit, unsupported browser, and camera-permission errors.
+- Automatic add-to-cart after a successful camera barcode match using the product's first enabled selling unit.
 - Purchases / Stock In workflow with supplier, date, multiple line items, product, purchase unit, quantity, line cost, purchase total, and generated purchase reference.
 - Automatic purchase-unit to base-unit stock conversion.
 - Weighted-average inventory costing after purchases.
@@ -29,7 +34,7 @@ All notable POSlite development changes are documented here.
 - CSV report export now includes COGS and gross profit.
 - `.pos` schema version 2 including products/unit conversions, barcode, purchases, stock movements, sales, customers, expenses, and settings.
 - `.pos` schema-1 import compatibility and automatic legacy product normalization.
-- Service Worker cache bumped to `poslite-v0.2.0`.
+- Service Worker cache bumped to `poslite-v0.2.0-scan1` and now includes `scanner.js` and `scanner.css` for offline-loaded scanner UI behavior.
 
 ### Changed
 
@@ -42,6 +47,7 @@ All notable POSlite development changes are documented here.
 - Existing v0.1 products are normalized into the v0.2 base-unit data model.
 - Product base unit is locked after creation in the current interface to protect existing stock and historical conversions.
 - Web UI is now optimized primarily for portrait smartphone use while retaining desktop/tablet support.
+- Barcode scanning now has an explicit scanner-ready workflow instead of relying only on the general search box.
 
 ### Fixed
 
@@ -51,7 +57,7 @@ All notable POSlite development changes are documented here.
 
 ### Known limitations
 
-- Camera barcode scanning is not implemented yet.
+- Camera barcode scanning depends on browser support for `BarcodeDetector`; unsupported browsers fall back to scanner-input/manual barcode entry.
 - QR Code scanning/generation is not implemented yet.
 - `.pos` backups are not encrypted yet.
 - Automatic rotating backup is not implemented yet.
