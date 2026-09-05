@@ -23,6 +23,7 @@ jobs:
           node --check cash-loans.js
           node --check preferences.js
           node --check brand.js
+          node --check about.js
           node --check sw.js
       - name: Verify required project files
         run: |
@@ -39,6 +40,7 @@ jobs:
           test -f cash-loans.js
           test -f preferences.js
           test -f brand.js
+          test -f about.js
           test -f data/receipts.json
           test -f manifest.webmanifest
           test -f sw.js
