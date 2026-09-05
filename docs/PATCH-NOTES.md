@@ -1,64 +1,72 @@
 # POSlite Patch Notes
 
-## Latest patch — Native Android JPG Receipt Hotfix
+## Latest patch — Sari-sari Terms, Theme & Reusable Config
 
 **Date:** 2026-09-05  
-**Track:** `0.3.0-native-dev`  
-**Status:** Development / device-testing build
+**Track:** Web workflow prototype feeding `0.3.0-native-dev`  
+**Status:** Development / Android-first web validation
+
+### Added
+
+- **Settings → Appearance & Custom Terms**.
+- Appearance choices: **System — follow phone**, **Light mode**, and **Dark mode**.
+- Editable store wording for Benta/Sell, Halin/Sales, Paninda/Products, Kumprada/Purchases, Stock/Inventory, Utang/Credit, Pautang na Pera, Gastos/Expenses, Kita at Tubo/Analytics, Talaan/Reports, Tubo sa Paninda/Gross Profit, Natirang Tubo/Net Profit, and stock-warning terms.
+- One-tap **Sari-sari Terms** preset.
+- One-tap **Standard Terms** reset.
+- Reusable `.posconfig` export/import for appearance and wording only.
+- `.posconfig` explicitly excludes products, stock, purchases, sales, customers, loans, payments, expenses, receipts, and transaction history.
+- Dark-mode styling for main POS panels, navigation, forms, dialogs, product/cart elements, and cash-loan UI while keeping receipt paper white/readable.
+- Offline caching for `preferences.js` and `preferences.css`.
+- Documentation in `docs/CUSTOMIZATION.md`.
+
+### Design decisions
+
+- Custom terminology is presentation-only and cannot alter internal accounting or inventory rules.
+- `System` appearance follows the device/Android color-scheme preference.
+- `.pos` remains business-data backup; `.posconfig` is reusable appearance/wording only.
+- The web implementation is the workflow prototype for the future native Android Settings port using the same config concepts.
+
+### Cash-loan workflow included in current web test line
+
+- Credit now separates **Utang sa Paninda** from **Pautang na Pera**.
+- Cash loans support principal, optional interest, payments, remaining balance, and Unpaid / Partial / Interest Pending / Fully Paid status.
+- Principal returned is not treated as Sales or Profit; only actual collected interest is loan interest income.
+
+### Validation
+
+- Web validation includes syntax checking for `preferences.js` and required customization assets/documentation.
+- The feature is smartphone-first and intended to be reviewed on the web build before native Android parity is implemented.
+
+---
+
+## Previous patch — Native Android JPG Receipt Hotfix
 
 ### Fixed
 
 - Replaced the receipt WebView + Android PrintManager/PDF path that could cause the app to close during receipt output on some Android devices.
-- Receipt output is now generated directly as a native Android bitmap/JPG instead of PDF.
-- Added guarded save/share error handling so receipt output failures show feedback instead of closing the app.
-- Added Android FileProvider configuration for safe JPG sharing to other apps.
+- Receipt output is generated directly as a native Android bitmap/JPG.
+- Added guarded save/share error handling.
+- Added Android FileProvider configuration for safe JPG sharing.
 
 ### Changed
 
-- Receipt file format: **PDF → JPG**.
-- JPG compression quality is approximately **68%** to keep receipt files lightweight for smartphone use.
-- On Android 10 and newer, saved receipts are written to **Pictures/POSlite**.
-- On older supported Android versions, receipt images use an app-safe Pictures location.
-- Receipt sharing now sends the generated JPG image rather than relying on the Android print/PDF workflow.
-- Sale records remain stored in SQLite independently of receipt image generation; saving/sharing a receipt does not create another sale.
+- Receipt format: **PDF → JPG**.
+- JPG compression quality is approximately **68%** for lightweight smartphone receipts.
+- Android 10+ saved receipts target **Pictures/POSlite**.
+- Receipt sharing sends the JPG image.
+- Receipt output remains independent from sale creation, so saving/sharing never creates a duplicate sale.
 
-### Verified build
+### Verified native build
 
-- Native Android workflow: **Build POSlite Native Android**
-- Verified hotfix run: **#12**
+- Workflow: **Build POSlite Native Android**
+- Hotfix run: **#12**
 - Run ID: `33972988985`
 - Result: **SUCCESS**
 - Artifact: `POSlite-native-debug`
 - Artifact SHA-256 (ZIP): `7ca1eae993443e8273a9a8caf2064b74f0beb06accd32ec55a838a5c02faaa87`
 
-### Previous native fixes included in the current development line
-
-- Correct Android 17/API 37 SDK package setup in CI.
-- AGP 9.4 built-in Kotlin migration.
-- Correct Google Code Scanner import and native barcode/QR scanner compilation.
-- Material3 receipt-history card compile fix.
-- Product delete protection feedback for products already used by transactions.
-- Native SQLite POS data layer for products, sales, purchases, stock movements, credit, expenses, receipts, and settings.
-
-### Still to validate on a real Android phone
-
-- Complete Sale → receipt dialog → Save JPG.
-- Complete Sale → Share JPG.
-- Receipt image readability for short and long item lists.
-- Barcode/QR scan behavior on the target Android device.
-- Product → Purchase/Stock In → Sell → Inventory → Analytics end-to-end totals.
-- Credit/utang sale and payment flow.
-
-### Planned follow-up
-
-- Rename any remaining old receipt UI wording from **Print / Save PDF** to **Save JPG** and **Share JPG** everywhere it still appears.
-- Add Android `.pos` import/export compatibility.
-- Add POSlite-generated product QR labels.
-- Add direct Bluetooth thermal-printer support later.
-- Add void/refund/return and damaged/expired inventory workflows.
-
 ---
 
 ## Documentation rule
 
-Every POSlite feature, bug fix, technical decision, build milestone, database change, and user-visible behavior change must be documented alongside development. This patch-note file records user-facing development patches; `CHANGELOG.md`, `docs/PROJECT.md`, and `docs/ANDROID-NATIVE.md` remain the master history and architecture references.
+Every POSlite feature, bug fix, technical decision, build milestone, database/config change, and user-visible behavior change must be documented alongside development. `CHANGELOG.md` and `docs/PROJECT.md` remain the master project history/status references.
