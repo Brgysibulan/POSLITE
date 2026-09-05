@@ -1,6 +1,59 @@
-# POSlite Patch Notes
+# SariPOS Patch Notes
 
-## Latest patch — Sari-sari Terms, Theme & Reusable Config
+## Latest patch — Native Android User-Friendly SariPOS UI
+
+**Date:** 2026-09-05  
+**Track:** `0.3.0-native-dev`  
+**Status:** Built successfully / Android device testing next
+
+### Added
+
+- Native Android **About SariPOS** card inside **Ayos ng App / Settings**.
+- App purpose text for sari-sari stores and small retailers.
+- Creator credit: **Created & Developed by Joshua Apal Pudi**.
+- Friendlier Android wording throughout major store workflows, including **Benta, Halin, Paninda, Kumprada, Utang, Gastos, Kita at Tubo, Resibo / Talaan,** and **Ayos ng App**.
+- More understandable product-entry labels for starting stock, purchase cost, selling units, and stock warnings.
+
+### Changed
+
+- Native Home branding now shows **SariPOS** instead of the old POSlite development name.
+- Main Android navigation now uses store-friendly labels such as **Benta, Paninda,** and **Iba Pa**.
+- Native receipt dialog now explicitly uses **Save JPG** and **Share JPG** instead of the old PDF wording.
+- Receipt save/share calls now connect directly to `saveReceiptJpg` and `shareReceiptJpg`.
+- JPG receipt user-facing branding, filename, share subject, and footer now use **SariPOS**.
+- Android 10+ receipt images now save under **Pictures/SariPOS**.
+- Internal package/database compatibility identifiers may still retain `poslite` where changing them would risk existing data/build compatibility.
+
+### Fixed
+
+- Removed the stale native Compose calls to the old `printReceipt` / `shareReceipt` path that no longer matched the JPG receipt implementation.
+- Receipt save/share failures are guarded with Android feedback instead of closing the app.
+
+### Verified native build
+
+- Workflow: **Build POSlite Native Android**
+- Latest run: **#15**
+- Run ID: `33976320017`
+- Head commit: `e004dc557de93b6b7664b932c3d50a02b8f81845`
+- Result: **SUCCESS**
+- Artifact: `POSlite-native-debug`
+- Artifact ID: `9972426146`
+- Artifact ZIP SHA-256: `9929ea484e0c75330b4467c53650d54683e32ad0fecfb4cf470df8385bae7d71`
+- Extracted APK SHA-256: `56b27115b33e89809550dd29160a6b7ef3605f78d6ca7da881647768c046eba4`
+
+### Device-test checklist
+
+- Install/open SariPOS on an Android phone.
+- Add a Paninda and verify simple labels.
+- Record a Kumprada / Stock In.
+- Complete a Benta and confirm stock deduction.
+- Open the generated Resibo and test **Save JPG** and **Share JPG**.
+- Check that the JPG appears under **Pictures/SariPOS** on Android 10+.
+- Open **Ayos ng App** and verify the About SariPOS creator/purpose card.
+
+---
+
+## Previous patch — Sari-sari Terms, Theme & Reusable Config
 
 **Date:** 2026-09-05  
 **Track:** Web workflow prototype feeding `0.3.0-native-dev`  
@@ -32,11 +85,6 @@
 - Cash loans support principal, optional interest, payments, remaining balance, and Unpaid / Partial / Interest Pending / Fully Paid status.
 - Principal returned is not treated as Sales or Profit; only actual collected interest is loan interest income.
 
-### Validation
-
-- Web validation includes syntax checking for `preferences.js` and required customization assets/documentation.
-- The feature is smartphone-first and intended to be reviewed on the web build before native Android parity is implemented.
-
 ---
 
 ## Previous patch — Native Android JPG Receipt Hotfix
@@ -52,7 +100,6 @@
 
 - Receipt format: **PDF → JPG**.
 - JPG compression quality is approximately **68%** for lightweight smartphone receipts.
-- Android 10+ saved receipts target **Pictures/POSlite**.
 - Receipt sharing sends the JPG image.
 - Receipt output remains independent from sale creation, so saving/sharing never creates a duplicate sale.
 
@@ -62,11 +109,9 @@
 - Hotfix run: **#12**
 - Run ID: `33972988985`
 - Result: **SUCCESS**
-- Artifact: `POSlite-native-debug`
-- Artifact SHA-256 (ZIP): `7ca1eae993443e8273a9a8caf2064b74f0beb06accd32ec55a838a5c02faaa87`
 
 ---
 
 ## Documentation rule
 
-Every POSlite feature, bug fix, technical decision, build milestone, database/config change, and user-visible behavior change must be documented alongside development. `CHANGELOG.md` and `docs/PROJECT.md` remain the master project history/status references.
+Every SariPOS feature, bug fix, technical decision, build milestone, database/config change, and user-visible behavior change must be documented alongside development. `CHANGELOG.md` and `docs/PROJECT.md` remain the master project history/status references.
