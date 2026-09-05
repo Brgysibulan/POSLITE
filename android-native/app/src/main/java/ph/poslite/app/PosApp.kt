@@ -45,7 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.google.android.gms.mlkit.vision.codescanner.GmsBarcodeScanning
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import ph.poslite.app.data.AnalyticsSummary
 import ph.poslite.app.data.CartLine
 import ph.poslite.app.data.Customer
@@ -368,6 +368,7 @@ private data class DraftUnit(val label: String, val qtyBase: String, val sellPri
 
 @Composable
 private fun ProductsScreen(c: PosController) {
+    val context = LocalContext.current
     var editing by remember { mutableStateOf<Product?>(null) }
     var addNew by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
@@ -386,8 +387,12 @@ private fun ProductsScreen(c: PosController) {
                             OutlinedButton(onClick = { editing = p }) { Text("Edit") }
                             TextButton(onClick = {
                                 val ok = c.store.deleteUnusedProduct(p.id)
-                                if (!ok) Toast.makeText(null, "", Toast.LENGTH_SHORT)
-                                c.refresh()
+                                if (!ok) {
+                                    Toast.makeText(context, "Cannot delete a product already used in transactions.", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    c.refresh()
+                                    Toast.makeText(context, "Product deleted.", Toast.LENGTH_SHORT).show()
+                                }
                             }) { Text("Delete") }
                         }
                     }
@@ -692,7 +697,10 @@ private fun ReportsScreen(c: PosController, back: () -> Unit) {
         Header("Receipts / Reports", "Recent native Android transaction receipts", back)
         LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             items(c.receipts, key = { it.id }) { r ->
-                Card(Modifier.fillMaxWidth().padding(bottom = 8.dp), onClick = { c.activeReceipt = r }) {
+                Card(
+                    onClick = { c.activeReceipt = r },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                ) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) { Text(r.number, fontWeight = FontWeight.Bold); Text("${fmtDate(r.createdAt)} · ${r.customerName}") }
                         Text(money(r.total), fontWeight = FontWeight.Bold)
