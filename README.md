@@ -7,8 +7,11 @@ POSlite is an offline-first point-of-sale system designed for sari-sari stores a
 - **Web reference:** v0.2.0 at repository root
 - **Native Android development:** v0.3.0-native-dev under `android-native/`
 - **Primary product direction:** Android smartphone-first
+- **First verified native APK baseline:** commit `9f4acb298eb71cb13da5dcb863c1749acca50507`
+- **Native Android build:** GitHub Actions run #8 — SUCCESS
+- **APK artifact:** `POSlite-native-debug`
 
-The existing web/PWA application remains the stable workflow reference while the native Android implementation is built and tested. The Android app is a real Kotlin/Jetpack Compose application, not a WebView wrapper.
+The existing web/PWA application remains the stable workflow reference while the native Android implementation is tested on real devices. The Android app is a real Kotlin/Jetpack Compose application, not a WebView wrapper.
 
 ## Native Android stack
 
@@ -18,12 +21,12 @@ The existing web/PWA application remains the stable workflow reference while the
 - Android Print Framework / Save as PDF
 - Android share intents
 - Google Code Scanner development integration for barcode/QR capture
-- Android Gradle Plugin 9.4
+- Android Gradle Plugin 9.4 built-in Kotlin
 - Gradle 9.6
 - JDK 17
 - Android 17/API 37 compile tooling
 
-## Native Android functions implemented in source
+## Native Android functions implemented
 
 - Home dashboard with sales today, transactions, gross profit, total credit, and low-stock count
 - Sell / checkout with search, native scan action, selling-unit selection, cart, discount, cash/change, and credit/utang
@@ -132,9 +135,9 @@ Direct Bluetooth thermal-printer integration remains a later native hardening fe
 
 Workflow: `.github/workflows/android-native-build.yml`
 
-It configures the current Android toolchain, builds `:app:assembleDebug`, and uploads `app-debug.apk` as the `POSlite-native-debug` workflow artifact when successful.
+The first verified native build completed successfully on run #8. It passed Android SDK setup, Gradle setup, `:app:assembleDebug`, and artifact upload.
 
-A native source change is not treated as a stable Android baseline until this APK workflow passes.
+The uploaded artifact is `POSlite-native-debug`. Future native source changes must continue to pass this workflow before they replace the current native baseline.
 
 ## Web/PWA reference
 
@@ -149,19 +152,20 @@ This web build is intentionally preserved while the native Android app is stabil
 
 ## Remaining native priorities
 
-1. Get and keep the native debug APK workflow green.
-2. Test the APK on an actual Android phone.
-3. Add Android `.pos` import/export compatibility.
-4. Add POSlite-generated product QR labels.
-5. Harden scanner behavior; optionally move to a fully bundled CameraX + ML Kit scanner if complete offline model availability is required.
-6. Add direct Bluetooth thermal-printer integration.
-7. Add hold/resume, void/refund/return, and damaged/expired inventory workflows.
-8. Add encrypted/protected backups.
+1. Install and test the verified debug APK on an actual Android phone.
+2. Test Products → Purchase → Sell → Receipt → Credit → Analytics end to end using real sample transactions.
+3. Test barcode scanning on the target Android device.
+4. Add Android `.pos` import/export compatibility.
+5. Add POSlite-generated product QR labels.
+6. Harden scanner behavior; optionally move to a fully bundled CameraX + ML Kit scanner if complete offline model availability is required.
+7. Add direct Bluetooth thermal-printer integration.
+8. Add hold/resume, void/refund/return, and damaged/expired inventory workflows.
+9. Add encrypted/protected backups.
 
 ## Documentation
 
 - `docs/PROJECT.md` — master project documentation
-- `docs/ANDROID-NATIVE.md` — native Android architecture and migration status
+- `docs/ANDROID-NATIVE.md` — native Android architecture, successful build baseline, and migration status
 - `docs/BARCODE-SCANNER.md` — scanner behavior
 - `docs/RECEIPTS.md` — receipt behavior
 - `CHANGELOG.md` — implementation history
