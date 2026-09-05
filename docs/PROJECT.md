@@ -178,6 +178,14 @@ Import behavior:
 - Service Worker caches core web application files.
 - Once the served web app is cached, normal app usage can continue offline.
 
+### Quality assurance
+
+- GitHub Actions workflow: `.github/workflows/validate.yml`
+- Runs on pushes to `main` and pull requests.
+- Checks JavaScript syntax for `app.js` and `sw.js`.
+- Confirms required POSlite project and documentation files exist.
+- Dialog Cancel/Close controls were corrected so cancelling a form cannot submit or save it accidentally.
+
 ## Important limitations of v0.1.0
 
 These are documented intentionally and should not be mistaken for completed features:
