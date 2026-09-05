@@ -43,6 +43,12 @@ All notable POSlite development changes are documented here.
 - Product base unit is locked after creation in the current interface to protect existing stock and historical conversions.
 - Web UI is now optimized primarily for portrait smartphone use while retaining desktop/tablet support.
 
+### Fixed
+
+- Same-product multi-unit sales now deduct stock cumulatively. Example: selling Candy by both Piece and Pack in one checkout deducts both quantities from the single base inventory instead of allowing one line to overwrite the other.
+- Repeated lines for the same product in one purchase now accumulate stock and weighted-average cost correctly instead of recalculating each line from the original pre-purchase stock.
+- Legacy product migration now checks and writes the raw IndexedDB product records so normalized v0.2 product data is actually persisted rather than only normalized in memory.
+
 ### Known limitations
 
 - Camera barcode scanning is not implemented yet.
