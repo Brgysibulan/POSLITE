@@ -55,3 +55,20 @@
     document.body.appendChild(script);
   }
 })();
+
+(() => {
+  if (!document.querySelector('link[data-poslite-cashloan-style]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = './cash-loans.css';
+    link.dataset.posliteCashloanStyle = '1';
+    document.head.appendChild(link);
+  }
+  if (!document.querySelector('script[data-poslite-cashloan-script]')) {
+    const script = document.createElement('script');
+    script.src = './cash-loans.js';
+    script.async = false;
+    script.dataset.posliteCashloanScript = '1';
+    document.body.appendChild(script);
+  }
+})();
