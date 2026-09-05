@@ -38,3 +38,20 @@
     addNoBarcodeOption(product);
   };
 })();
+
+(() => {
+  if (!document.querySelector('link[data-poslite-receipt-style]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = './receipt.css';
+    link.dataset.posliteReceiptStyle = '1';
+    document.head.appendChild(link);
+  }
+  if (!document.querySelector('script[data-poslite-receipt-script]')) {
+    const script = document.createElement('script');
+    script.src = './receipt.js';
+    script.async = false;
+    script.dataset.posliteReceiptScript = '1';
+    document.body.appendChild(script);
+  }
+})();
