@@ -2,7 +2,16 @@
 
 ## Status
 
-POSlite now has a native Android implementation under `android-native/`. The existing web/PWA build remains in the repository as the stable workflow reference while native Android is validated.
+POSlite now has a native Android implementation under `android-native/`. The existing web/PWA build remains in the repository as the stable workflow reference while native Android is validated on real devices.
+
+**Native build baseline:** `9f4acb298eb71cb13da5dcb863c1749acca50507`  
+**GitHub Actions run:** `Build POSlite Native Android` run #8 / run ID `33971137411`  
+**Build result:** SUCCESS  
+**APK artifact:** `POSlite-native-debug`  
+**Artifact size:** approximately 12.3 MB  
+**Artifact SHA-256 digest (ZIP):** `0d69dc71c99f109b0dad78805256f9cecfb4271b274a1a2cdf0434dce86e52d4`
+
+The debug APK successfully passed Android SDK setup, Gradle setup, `:app:assembleDebug`, and GitHub artifact upload.
 
 ## Native Android direction
 
@@ -17,6 +26,9 @@ Technology:
 - Android share intents for receipt sharing
 - Google Code Scanner Android API for barcode and QR capture during development
 - Android API 37 compile SDK, target API 36, minimum API 26
+- Android Gradle Plugin 9.4 built-in Kotlin
+- Gradle 9.6
+- JDK 17
 
 ## Native modules implemented in source
 
@@ -64,7 +76,7 @@ Technology:
 - multiple units/conversions
 - separate selling price per unit
 - Sell / Buy enable flags per unit
-- unused-product delete guard
+- unused-product delete guard with transaction-history feedback
 
 Examples remain the same as the web model:
 
@@ -174,13 +186,14 @@ For current Android development, operational transactions are stored in the Andr
 
 The native Android development build uses the Google Code Scanner API, which provides Android-native barcode/QR capture without the web `BarcodeDetector` dependency.
 
-Product lookup still follows POSlite rules:
+Product lookup follows POSlite rules:
 
 - barcode assigned to product -> scan can add the product
 - no barcode -> product remains searchable/tappable
-- QR support can use the same scan capture path once POSlite-generated product QR values are assigned
+- QR capture is available through the same scanner path
+- POSlite-generated product QR labels are still a separate planned feature
 
-A later hardening phase can switch to a fully bundled custom CameraX + ML Kit scanner if we require scanner-model availability with no Google Play Services module dependency.
+A later hardening phase can switch to a fully bundled custom CameraX + ML Kit scanner if scanner-model availability without a Google Play services module dependency is required.
 
 ## Receipt rule
 
@@ -206,13 +219,15 @@ The workflow:
 
 1. checks out the repository
 2. installs JDK 17
-3. configures Android SDK
-4. installs API 37 / Android build tools
+3. configures current Android command-line tools
+4. installs `platforms;android-37.0`
 5. configures Gradle 9.6
 6. builds `:app:assembleDebug`
 7. uploads `app-debug.apk` as `POSlite-native-debug`
 
-No Android source change should be considered stable until this workflow passes.
+Run #8 completed every build step successfully and uploaded the first verified native Android debug APK artifact.
+
+Future native source changes should continue to pass this workflow before being treated as a new stable native baseline.
 
 ## Web compatibility
 
@@ -225,17 +240,31 @@ This allows:
 - safer native migration
 - rollback/reference while Android features are stabilized
 
+## What “native Android baseline” means
+
+The current milestone means:
+
+- native Android source exists
+- native SQLite data layer exists
+- core POS workflows compile together
+- native barcode/QR capture integration compiles
+- native receipt print/share integration compiles
+- GitHub Actions can build and package a debug APK
+
+It does **not** yet mean production-ready or fully device-validated. Actual installation and transaction testing on Android hardware is still required.
+
 ## Next native hardening tasks
 
-- actual-device Android UX testing
-- build/install APK testing
-- improve landscape/tablet handling only after portrait phone workflow is stable
-- `.pos` Android import/export compatibility
-- product QR label generation
+- install and test the generated APK on an actual Android phone
+- verify add/edit product, no-barcode product, piece/pack/kilo conversions, purchase, sale, stock, credit, expense, analytics, and receipt end to end
+- verify barcode scanning on the target Android device
+- verify Android Print / Save PDF receipt flow
+- add `.pos` Android import/export compatibility
+- add product QR label generation
 - fully bundled offline CameraX + ML Kit scanner if required
-- Bluetooth thermal printer integration
+- direct Bluetooth thermal-printer integration
 - void/refund/return flow
 - damaged/expired inventory flow
 - hold/resume sale
 - encrypted backups
-- proper background database threading / repository layer after workflow validation
+- move database work to a proper background repository/coroutine layer after workflow validation
