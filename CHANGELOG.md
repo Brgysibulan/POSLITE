@@ -2,6 +2,52 @@
 
 All notable POSlite development changes are documented here.
 
+## [0.3.0-native-dev] - 2026-09-05
+
+### Added
+
+- Native Android application under `android-native/` while preserving the working web/PWA build as a stable reference and fallback.
+- Kotlin + Jetpack Compose Android UI with smartphone-first navigation for Home, Sell, Products, and More.
+- Native SQLite operational database `poslite-native.db` independent from browser IndexedDB.
+- Native Android database tables for products, product units, sales, sale items, purchases, purchase items, stock movements, customers, credit ledger, expenses, and settings.
+- Native product management with optional/no barcode, piece/gram/milliliter base units, multiple sell/buy conversions, prices, opening stock/cost, and low-stock thresholds.
+- Native Sell workflow with product search, unit selection, cart, stock validation, discount, cash/change, optional cash-customer name, and credit/utang checkout.
+- Android-native barcode/QR capture path using Google Code Scanner during development.
+- Native Purchases / Stock In with unit conversion, weighted-average inventory costing, purchase history, and stock movement recording.
+- Native Inventory adjustments with Add, Remove, Set, and reason/note.
+- Native customer credit/utang records and payment recording.
+- Native expense recording.
+- Native 7/30/90/365-day Analytics for Sales, COGS, Gross Profit, Expenses, Estimated Net, and Purchase Spend.
+- Native sale receipt generation after successful checkout, recent receipt history, Android share intent, Android Print Framework, and Save-as-PDF path with an 80 mm-oriented receipt layout.
+- Native store settings for store name, owner, and address.
+- GitHub Actions workflow `.github/workflows/android-native-build.yml` that builds `:app:assembleDebug` and uploads the debug APK when successful.
+- Native Android implementation documentation in `docs/ANDROID-NATIVE.md`.
+
+### Changed
+
+- Android is no longer only a future roadmap item; native Android development is now active in the repository.
+- The web/PWA app remains available at repository root and is intentionally not replaced while native Android is validated.
+- Android operational data uses local SQLite. `data/receipts.json` remains development/mock data only and is not the live Android transaction database.
+- Native Android build configuration was migrated to Android Gradle Plugin 9.4 built-in Kotlin, Gradle 9.6, JDK 17, and Android 17/API 37 compile tooling.
+
+### Fixed during native build bring-up
+
+- Corrected Android 17 SDK package installation in CI to `platforms;android-37.0` using current Android command-line tools.
+- Migrated away from deprecated AGP 9 Kotlin opt-out configuration.
+- Corrected Google Code Scanner package import in the Compose Sell screen.
+- Corrected clickable Material3 receipt-card argument ordering.
+- Improved product deletion feedback when a product is protected by transaction history.
+
+### Native development limitations
+
+- Native Android `.pos` import/export compatibility is not implemented yet.
+- POSlite-generated product QR labels are not implemented yet.
+- Direct Bluetooth thermal-printer integration is not implemented yet; current native receipts use Android Print/Save PDF and Share.
+- Google Code Scanner can depend on a Google Play services scanner module; a fully bundled CameraX + ML Kit offline scanner remains a hardening option.
+- Hold/resume sale, void/refund/return, and dedicated damaged/expired workflows are not implemented yet.
+- Native build must pass the APK workflow before this development milestone is treated as a stable Android baseline.
+- Actual-device Android UX testing is still required after a successful APK build.
+
 ## [0.2.0] - 2026-09-05
 
 ### Added
