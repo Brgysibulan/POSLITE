@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#166534" />
+  <title>POSlite</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-btn mobile-only" id="menuBtn" aria-label="Open menu">☰</button>
+    <h1>POSlite</h1>
+    <div class="top-actions">
+      <span class="status-dot" title="Offline-ready"></span>
+      <span id="clockText" class="muted"></span>
+    </div>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+    <nav>
+      <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+      <button class="nav-btn" data-view="pos">POS</button>
+      <button class="nav-btn" data-view="products">Products</button>
+      <button class="nav-btn" data-view="inventory">Inventory</button>
+      <button class="nav-btn" data-view="credit">Credit</button>
+      <button class="nav-btn" data-view="expenses">Expenses</button>
+      <button class="nav-btn" data-view="analytics">Analytics</button>
+      <button class="nav-btn" data-view="reports">Reports</button>
+      <button class="nav-btn" data-view="settings">Settings</button>
+    </nav>
+  </aside>
+
+  <main class="main" id="mainContent">
+    <section class="view active" id="view-dashboard">
+      <div class="section-head"><h2>Dashboard</h2><button class="primary" data-jump="pos">New Sale</button></div>
+      <div class="kpi-grid">
+        <article class="kpi"><span>Sales Today</span><strong id="kpiSales">₱0.00</strong></article>
+        <article class="kpi"><span>Transactions</span><strong id="kpiTransactions">0</strong></article>
+        <article class="kpi"><span>Estimated Profit</span><strong id="kpiProfit">₱0.00</strong></article>
+        <article class="kpi"><span>Total Credit</span><strong id="kpiCredit">₱0.00</strong></article>
+      </div>
+      <div class="grid two">
+        <article class="panel"><div class="panel-head"><h3>Low Stock</h3><button class="link-btn" data-jump="inventory">View Inventory</button></div><div id="lowStockList" class="list"></div></article>
+        <article class="panel"><div class="panel-head"><h3>Recent Sales</h3><button class="link-btn" data-jump="reports">View Reports</button></div><div id="recentSalesList" class="list"></div></article>
+      </div>
+    </section>
+
+    <section class="view" id="view-pos">
+      <div class="section-head"><h2>POS</h2><span class="muted">Fast checkout</span></div>
+      <div class="pos-layout">
+        <div class="panel product-browser">
+          <div class="toolbar">
+            <input id="posSearch" type="search" placeholder="Search product" />
+            <select id="posCategory"><option value="">All categories</option></select>
+          </div>
+          <div id="posProductGrid" class="product-grid"></div>
+        </div>
+        <aside class="panel cart-panel">
+          <div class="panel-head"><h3>Cart</h3><button id="clearCartBtn" class="link-btn danger-text">Clear</button></div>
+          <div id="cartList" class="cart-list"></div>
+          <div class="cart-summary">
+            <div><span>Subtotal</span><strong id="cartSubtotal">₱0.00</strong></div>
+            <label>Discount <input id="discountInput" type="number" min="0" step="0.01" value="0" /></label>
+            <div class="grand"><span>Total</span><strong id="cartTotal">₱0.00</strong></div>
+            <label>Payment
+              <select id="paymentType"><option value="cash">Cash</option><option value="credit">Credit / Utang</option></select>
+            </label>
+            <div id="cashFields">
+              <label>Cash received <input id="cashInput" type="number" min="0" step="0.01" placeholder="0.00" /></label>
+              <div><span>Change</span><strong id="changeAmount">₱0.00</strong></div>
+            </div>
+            <div id="creditFields" hidden>
+              <label>Customer <select id="creditCustomer"></select></label>
+            </div>
+            <button id="checkoutBtn" class="primary full">Complete Sale</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="view" id="view-products">
+      <div class="section-head"><h2>Products</h2><button id="addProductBtn" class="primary">Add Product</button></div>
+      <div class="panel">
+        <div class="toolbar"><input id="productSearch" type="search" placeholder="Search products" /><select id="productCategory"><option value="">All categories</option></select></div>
+        <div class="table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Cost</th><th>Price</th><th>Stock</th><th>Unit</th><th></th></tr></thead><tbody id="productTableBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-inventory">
+      <div class="section-head"><h2>Inventory</h2><button id="stockAdjustBtn" class="primary">Stock Adjustment</button></div>
+      <div class="kpi-grid compact">
+        <article class="kpi"><span>Products</span><strong id="invProducts">0</strong></article>
+        <article class="kpi"><span>Low Stock</span><strong id="invLow">0</strong></article>
+        <article class="kpi"><span>Out of Stock</span><strong id="invOut">0</strong></article>
+        <article class="kpi"><span>Inventory Value</span><strong id="invValue">₱0.00</strong></article>
+      </div>
+      <div class="panel table-wrap"><table><thead><tr><th>Product</th><th>Stock</th><th>Reorder Level</th><th>Status</th><th>Value</th><th></th></tr></thead><tbody id="inventoryTableBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="view-credit">
+      <div class="section-head"><h2>Credit</h2><button id="addCustomerBtn" class="primary">Add Customer</button></div>
+      <div class="panel table-wrap"><table><thead><tr><th>Customer</th><th>Contact</th><th>Balance</th><th>Last Updated</th><th></th></tr></thead><tbody id="customerTableBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="view-expenses">
+      <div class="section-head"><h2>Expenses</h2><button id="addExpenseBtn" class="primary">Add Expense</button></div>
+      <div class="kpi-grid compact"><article class="kpi"><span>Today</span><strong id="expenseToday">₱0.00</strong></article><article class="kpi"><span>This Month</span><strong id="expenseMonth">₱0.00</strong></article></div>
+      <div class="panel table-wrap"><table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th></th></tr></thead><tbody id="expenseTableBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="view-analytics">
+      <div class="section-head"><h2>Analytics</h2><select id="analyticsRange"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></div>
+      <div class="kpi-grid"><article class="kpi"><span>Sales</span><strong id="anSales">₱0.00</strong></article><article class="kpi"><span>Gross Profit</span><strong id="anProfit">₱0.00</strong></article><article class="kpi"><span>Average Ticket</span><strong id="anAverage">₱0.00</strong></article><article class="kpi"><span>Expenses</span><strong id="anExpenses">₱0.00</strong></article></div>
+      <div class="grid two">
+        <article class="panel"><h3>Product Performance</h3><div id="topProductsList" class="list"></div></article>
+        <article class="panel"><h3>Business Insights</h3><div id="insightsList" class="insights"></div></article>
+      </div>
+      <article class="panel"><h3>Sales Trend</h3><div id="salesChart" class="bar-chart"></div></article>
+    </section>
+
+    <section class="view" id="view-reports">
+      <div class="section-head"><h2>Reports</h2><button id="exportReportBtn" class="secondary">Export CSV</button></div>
+      <div class="panel">
+        <div class="toolbar"><label>From <input id="reportFrom" type="date" /></label><label>To <input id="reportTo" type="date" /></label><button id="runReportBtn" class="primary">Run Report</button></div>
+        <div class="kpi-grid compact"><article class="kpi"><span>Sales</span><strong id="reportSales">₱0.00</strong></article><article class="kpi"><span>Gross Profit</span><strong id="reportProfit">₱0.00</strong></article><article class="kpi"><span>Expenses</span><strong id="reportExpenses">₱0.00</strong></article><article class="kpi"><span>Net</span><strong id="reportNet">₱0.00</strong></article></div>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Transaction</th><th>Payment</th><th>Items</th><th>Total</th></tr></thead><tbody id="reportTableBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-settings">
+      <div class="section-head"><h2>Settings</h2></div>
+      <div class="grid two">
+        <article class="panel">
+          <h3>Store</h3>
+          <form id="settingsForm" class="form-grid">
+            <label>Store name <input id="storeName" required /></label>
+            <label>Owner <input id="storeOwner" /></label>
+            <label>Address <input id="storeAddress" /></label>
+            <label>Default low-stock level <input id="defaultLowStock" type="number" min="0" value="5" /></label>
+            <button class="primary" type="submit">Save Settings</button>
+          </form>
+        </article>
+        <article class="panel">
+          <h3>Data Backup</h3>
+          <p class="muted">Export all POSlite data to a portable <strong>.pos</strong> file. Importing will replace the current local database after confirmation.</p>
+          <div class="stack"><button id="exportPosBtn" class="primary">Export .pos Backup</button><label class="file-btn">Import .pos Backup<input id="importPosInput" type="file" accept=".pos,application/json" hidden /></label></div>
+          <div id="backupStatus" class="status-box"></div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="formDialog">
+    <form method="dialog" id="dialogForm" class="dialog-card">
+      <div class="panel-head"><h3 id="dialogTitle">Form</h3><button value="cancel" class="icon-btn" aria-label="Close">✕</button></div>
+      <div id="dialogFields" class="form-grid"></div>
+      <div class="dialog-actions"><button value="cancel" class="secondary">Cancel</button><button id="dialogSaveBtn" value="default" class="primary">Save</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
