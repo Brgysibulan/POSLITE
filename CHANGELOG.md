@@ -21,6 +21,11 @@ All notable POSlite development changes are documented here.
 - `.pos` full backup export and restore import using POSlite schema version 1.
 - Web App Manifest and Service Worker for installable/offline web use.
 - Master project documentation and mandatory documentation rule.
+- GitHub Actions validation workflow that checks `app.js`, `sw.js`, and required project files on pushes and pull requests.
+
+### Fixed
+
+- Dialog Cancel and Close controls are now explicitly non-submitting so they cannot accidentally trigger a form save.
 
 ### Technical decisions
 
@@ -29,6 +34,7 @@ All notable POSlite development changes are documented here.
 - IndexedDB selected instead of `localStorage` for operational data.
 - `.pos` defined as POSlite's portable backup extension.
 - Native Android remains the target after web stabilization, planned with Kotlin, Jetpack Compose, and Room/SQLite.
+- Basic automated syntax/file validation is kept in the repository to protect the working web baseline.
 
 ### Known limitations
 
