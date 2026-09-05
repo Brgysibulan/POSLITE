@@ -72,3 +72,20 @@
     document.body.appendChild(script);
   }
 })();
+
+(() => {
+  if (!document.querySelector('link[data-poslite-preferences-style]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = './preferences.css';
+    link.dataset.poslitePreferencesStyle = '1';
+    document.head.appendChild(link);
+  }
+  if (!document.querySelector('script[data-poslite-preferences-script]')) {
+    const script = document.createElement('script');
+    script.src = './preferences.js';
+    script.async = false;
+    script.dataset.poslitePreferencesScript = '1';
+    document.body.appendChild(script);
+  }
+})();
