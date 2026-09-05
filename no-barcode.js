@@ -86,6 +86,20 @@
     script.src = './preferences.js';
     script.async = false;
     script.dataset.poslitePreferencesScript = '1';
+    script.addEventListener('load', () => {
+      if (document.querySelector('script[data-saripos-brand-script]')) return;
+      const brand = document.createElement('script');
+      brand.src = './brand.js';
+      brand.async = false;
+      brand.dataset.sariposBrandScript = '1';
+      document.body.appendChild(brand);
+    }, { once: true });
     document.body.appendChild(script);
+  } else if (!document.querySelector('script[data-saripos-brand-script]')) {
+    const brand = document.createElement('script');
+    brand.src = './brand.js';
+    brand.async = false;
+    brand.dataset.sariposBrandScript = '1';
+    document.body.appendChild(brand);
   }
 })();
