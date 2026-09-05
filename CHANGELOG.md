@@ -35,9 +35,15 @@ All notable POSlite development changes are documented here.
 - `.pos` defined as POSlite's portable backup extension.
 - Native Android remains the target after web stabilization, planned with Kotlin, Jetpack Compose, and Room/SQLite.
 - Basic automated syntax/file validation is kept in the repository to protect the working web baseline.
+- Barcode and QR Code support are now official roadmap items.
+- Planned barcode support includes product barcode fields, barcode search, camera scanning where supported, and compatibility with keyboard-style USB/Bluetooth scanners.
+- Planned QR Code support includes QR product lookup, POSlite-generated QR labels for custom/unbarcoded products, and optional receipt transaction-reference QR codes.
+- Barcode/QR identifiers will be included in `.pos` backup/restore after the scanning feature is implemented.
 
 ### Known limitations
 
 - `.pos` backups are not encrypted yet.
 - Advanced tingi/unit conversion is not implemented yet.
-- Supplier, barcode, receipt printer, hold sale, void/refund, and multi-user permission features are planned for later versions.
+- Barcode scanning is planned but not yet implemented.
+- QR Code scanning/generation is planned but not yet implemented.
+- Supplier, receipt printer, hold sale, void/refund, and multi-user permission features are planned for later versions.
