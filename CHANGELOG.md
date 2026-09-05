@@ -10,7 +10,9 @@ All notable SariPOS development changes are documented here. Historical entries 
 - New `brand.js` compatibility layer for web branding and friendlier store wording without changing existing database keys or operational records.
 - New web users default to sari-sari-store terminology such as **Benta, Halin, Paninda, Kumprada, Utang, Gastos,** and **Tubo** while still allowing full customization.
 - Android launcher label changed to **SariPOS** while keeping the existing package/theme identifiers for build compatibility.
-- New **Settings → About SariPOS** card explaining the app's purpose, Android-first/offline-friendly design goal, and creator credit: **Joshua Apal Pudi**.
+- Native Android core screens now use sari-sari-store-friendly labels such as **Benta, Halin, Paninda, Kumprada, Utang, Gastos, Kita at Tubo, Resibo / Talaan,** and **Ayos ng App**.
+- Native **Settings / Ayos ng App → About SariPOS** card explaining the app purpose and showing **Created & Developed by Joshua Apal Pudi**.
+- New **Settings → About SariPOS** card on the web explaining the app's purpose, Android-first/offline-friendly design goal, and creator credit: **Joshua Apal Pudi**.
 - New `about.js` module for the web About card, included in offline caching and CI validation.
 - Web development prototype for **Pautang na Pera / Cash Loans**, kept separate from product-credit/utang sales.
 - Cash-loan borrower, principal, optional contact, loan date, optional due date, notes, payment history, and automatic Unpaid / Partial / Interest Pending / Fully Paid status.
@@ -23,12 +25,19 @@ All notable SariPOS development changes are documented here. Historical entries 
 - Reusable `.posconfig` export/import containing only appearance and terminology, with no sales, products, stock, customers, loans, or other business records.
 - `docs/CASH-LOANS.md` and `docs/CUSTOMIZATION.md` documentation.
 - `preferences.js`, `preferences.css`, `brand.js`, and `about.js` cached for offline web use.
+- Verified native Android build **#15** at commit `e004dc557de93b6b7664b932c3d50a02b8f81845`, with uploaded debug APK artifact.
 
 ### Changed
 
 - Web app manifest now installs/displays as **SariPOS**.
 - Settings wording is made friendlier for sari-sari store users, including **Ayos ng App** and **Itsura at Mga Tawag** presentation.
-- Existing saved terminology/theme preferences are preserved; sari-sari defaults apply only when no UI config exists yet.
+- Native Android Home now displays **SariPOS** with store-friendly KPI labels such as **Halin Ngayon, Tubo Ngayon, Mga Utang,** and **Paninda**.
+- Native bottom navigation now uses **Benta, Paninda,** and **Iba Pa** for easier phone operation.
+- Native product, Kumprada, stock, Utang, Gastos, analytics, reports, and Settings screens were relabeled with simpler sari-sari-store wording without changing transaction/accounting logic.
+- Native receipt dialog now uses **Save JPG** and **Share JPG** and calls the direct JPG receipt functions instead of the obsolete PDF-oriented UI path.
+- JPG receipt filename, footer, share subject/text, and user-facing branding now use **SariPOS**.
+- Android 10+ receipt JPGs now save under **Pictures/SariPOS**.
+- Existing saved terminology/theme preferences are preserved on the web; sari-sari defaults apply only when no UI config exists yet.
 - GitHub repository name remains `POSLITE` for now to avoid breaking current GitHub Pages/build links.
 - Internal compatibility identifiers such as existing database/package/local-storage names are not force-renamed yet.
 - Cash-loan principal repayments are kept outside Sales and Profit; only actual collected interest is treated as loan interest income.
@@ -38,6 +47,7 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Fixed
 
+- Removed stale native Compose `printReceipt` / `shareReceipt` calls and the old **Print / Save PDF** wording so the screen matches the implemented JPG receipt engine.
 - Native Android receipt output is guarded so save/share failures provide feedback instead of closing the app through the previous print/PDF path.
 - Added Android FileProvider handling for safe JPG receipt sharing.
 
@@ -80,12 +90,13 @@ All notable SariPOS development changes are documented here. Historical entries 
 ### Native development limitations
 
 - Native Android `.pos` import/export compatibility is not implemented yet.
-- POSlite-generated product QR labels are not implemented yet.
+- SariPOS-generated product QR labels are not implemented yet.
 - Direct Bluetooth thermal-printer integration is not implemented yet; current native receipt output is JPG save/share.
 - Google Code Scanner can depend on a Google Play services scanner module; a fully bundled CameraX + ML Kit offline scanner remains a hardening option.
 - Hold/resume sale, void/refund/return, and dedicated damaged/expired workflows are not implemented yet.
-- Native build must pass the APK workflow before this development milestone is treated as a stable Android baseline.
-- Actual-device Android UX testing is still required after a successful APK build.
+- Native Light/Dark/System appearance, editable custom terms, and `.posconfig` import/export are still pending native parity with the web prototype.
+- Native Pautang na Pera/cash-loan workflow is still pending native parity with the web prototype.
+- Actual-device Android UX testing is still required after the successful build.
 
 ## [0.2.0] - 2026-09-05
 
@@ -154,7 +165,7 @@ All notable SariPOS development changes are documented here. Historical entries 
 - Hold/resume sale and void/refund/return workflows are not implemented yet.
 - Receipt printing and Bluetooth thermal-printer support are not implemented yet.
 - Multi-user/PIN permissions are not implemented yet.
-- Native Android implementation is still a future phase after web stabilization.
+- Native Android implementation is now active under `android-native/`.
 
 ## [0.1.0] - 2026-09-05
 
