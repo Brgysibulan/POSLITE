@@ -10,7 +10,8 @@
 **Native Android development version:** v0.3.0-native-dev  
 **Primary platform:** Android smartphone  
 **First verified native APK baseline:** `9f4acb298eb71cb13da5dcb863c1749acca50507` — build #8 SUCCESS  
-**Latest verified native JPG-receipt hotfix baseline:** `8b0ea16b79a073aeed1b43bfdaf9fd335e08e631` — build #12 SUCCESS
+**Verified native JPG-receipt hotfix baseline:** `8b0ea16b79a073aeed1b43bfdaf9fd335e08e631` — build #12 SUCCESS  
+**Latest verified native SariPOS UI baseline:** `e004dc557de93b6b7664b932c3d50a02b8f81845` — build #15 SUCCESS
 
 ## Mandatory project rule
 
@@ -26,7 +27,7 @@ Master references:
 
 SariPOS is a lightweight, offline-first POS for sari-sari stores and small retail businesses. The final product is Android-smartphone-first and should minimize technical/accounting wording in everyday operation while keeping correct stock, purchasing, sales, credit/utang, cash-loan, expense, receipt, and profit records.
 
-Default user-facing language is sari-sari-store friendly. New web users start with familiar terms such as **Benta, Halin, Paninda, Kumprada, Utang, Gastos,** and **Tubo**, while the wording remains customizable.
+Default user-facing language is sari-sari-store friendly. Current native Android screens use familiar terms such as **Benta, Halin, Paninda, Kumprada, Utang, Gastos, Kita at Tubo, Resibo / Talaan,** and **Ayos ng App**. Web users can additionally customize terminology and appearance.
 
 ## Branding and compatibility rule
 
@@ -34,11 +35,11 @@ The user-facing app/product name is **SariPOS**.
 
 To protect existing development data and build compatibility, some internal technical identifiers may continue using the old `POSlite`/`poslite` name until a controlled migration is implemented. Examples include package names, local database filenames, local-storage keys, legacy backup/config format identifiers, and repository path. These are implementation details and should not be shown as the main product name in the UI.
 
-The web title/branding and Android launcher label use **SariPOS**. The repository name remains `POSLITE` for now so existing GitHub Pages/build links are not broken.
+The web title/branding, Android launcher label, native Home header, native Settings, and receipt user-facing branding use **SariPOS**. The repository name remains `POSLITE` for now so existing GitHub Pages/build links are not broken.
 
 ## About SariPOS
 
-The web Settings screen now includes **About SariPOS** so a store owner can quickly understand what the app is for without reading technical documentation.
+Both the web Settings workflow and the native Android **Ayos ng App** screen include **About SariPOS** so a store owner can quickly understand what the app is for without reading technical documentation.
 
 Purpose shown in the app:
 
@@ -47,7 +48,7 @@ Purpose shown in the app:
 - The design direction is Android-first, smartphone-friendly, offline/local-first, and uses familiar store language.
 - Creator credit shown in Settings: **Created & Developed by Joshua Apal Pudi**.
 
-The About card is currently implemented in the web workflow-validation build through `about.js`. The same About content should be included when the native Android Settings/customization screen is fully ported.
+The native About card was added to Jetpack Compose Settings before verified Android build #15.
 
 ## Platform strategy
 
@@ -180,6 +181,8 @@ Implemented rules include:
 
 No-barcode items remain searchable/tappable and never require a fake barcode.
 
+The native UI now presents the main product fields with simpler sari-sari-store wording such as **Paninda, Panimulang stock, Puhunan, Presyo ng benta, Benta,** and **Kumprada**, while internal stock calculations remain unchanged.
+
 ## Purchases / Stock In
 
 Implemented rules include supplier, multiple lines, purchasing unit, quantity, cost, purchase total, base-unit conversion, stock movement history, and weighted-average inventory cost.
@@ -190,11 +193,15 @@ Formula:
 
 `New Average Cost = (Old Inventory Value + New Purchase Cost) / (Existing Stock + Purchased Base Quantity)`
 
+Native user-facing wording presents this workflow as **Kumprada / Stock In** with labels such as **Pinagbilhan / Supplier, Paninda, Dami, Kabuuang bili,** and **I-save ang Kumprada**.
+
 ## Sell / Checkout
 
 Native Android includes product search, native scan action, barcode/QR capture path, cart, selectable selling unit, stock validation, discount, cash/change, optional cash-customer name, credit/utang checkout, stock deduction, movement record, sale history, and automatic receipt generation after a successful sale.
 
 Receipt rendering never creates a second sale.
+
+The current native screen uses store-friendly wording such as **Benta, Halin, Bayad na cash, Sukli, Utang,** and **Kumpletuhin ang Benta**.
 
 ## Barcode and QR
 
@@ -255,12 +262,12 @@ Operating expenses remain separate from inventory purchases.
 
 Core metrics:
 
-- Sales
-- COGS
-- Gross Profit
-- Expenses
-- Estimated Net
-- Purchase Spend
+- Sales / Halin
+- COGS / Puhunan ng Nabenta
+- Gross Profit / Tubo sa Paninda
+- Expenses / Gastos
+- Estimated Net / Natirang Tubo
+- Purchase Spend / Gastos sa Kumprada
 
 Core calculations:
 
@@ -279,18 +286,21 @@ Current native receipt output:
 - receipt history/view
 - direct native bitmap rendering
 - lightweight JPG generation
-- Save JPG
-- Share JPG
+- **Save JPG**
+- **Share JPG**
 - safe FileProvider sharing
 - save/share failures handled without relying on the previous WebView/PrintManager PDF path
+- SariPOS user-facing filename/footer/share branding
 
-On Android 10+ saved receipt images currently target the compatibility folder `Pictures/POSlite`; this internal path can be migrated later without affecting the SariPOS user-facing name.
+Android 10+ saved receipt images target **Pictures/SariPOS**. Older supported Android versions use the app-safe external Pictures area under the SariPOS folder.
+
+The stale Compose calls/labels for `Print / Save PDF` were removed before build #14, and the final receipt branding was verified in build #15.
 
 Direct Bluetooth thermal-printer support remains planned.
 
 ## Appearance and custom terminology — web workflow prototype
 
-Settings now includes a user-friendly **Itsura at Mga Tawag** area.
+Settings on the web includes a user-friendly **Itsura at Mga Tawag** area.
 
 Appearance:
 
@@ -315,11 +325,13 @@ A Sari-sari preset and Standard preset are provided, and every term remains indi
 
 Changing wording is presentation-only. It does not change internal IDs, database meaning, stock calculations, or accounting formulas.
 
+Native Android now uses sari-sari-friendly default labels, but the full native **Light/Dark/System + custom-term editor + `.posconfig` import/export** is still pending.
+
 See `docs/CUSTOMIZATION.md`.
 
 ## Reusable `.posconfig`
 
-The UI configuration can be exported/imported as `.posconfig` schema version 1.
+The web UI configuration can be exported/imported as `.posconfig` schema version 1.
 
 It contains only:
 
@@ -354,7 +366,14 @@ No GitHub personal access token is embedded in the public web source or Android 
 
 Native workflow: `.github/workflows/android-native-build.yml`
 
-The first complete native APK baseline was build #8. The JPG-receipt hotfix was subsequently verified in native build #12, including APK artifact upload.
+Verified milestones:
+
+- build #8 — first complete native APK baseline
+- build #12 — JPG receipt crash-path hotfix
+- build #14 — user-friendly SariPOS Compose wording + direct JPG receipt actions
+- build #15 — final SariPOS JPG receipt branding; **SUCCESS**, run ID `33976320017`, artifact `POSlite-native-debug`
+
+Build #15 head commit: `e004dc557de93b6b7664b932c3d50a02b8f81845`.
 
 Web workflow: `.github/workflows/validate.yml`
 
@@ -366,6 +385,7 @@ Future source changes should pass the applicable workflow before being treated a
 
 Native source/build level:
 
+- SariPOS app/Home branding
 - Compose application
 - local SQLite POS data layer
 - products/no-barcode/unit conversions
@@ -375,8 +395,10 @@ Native source/build level:
 - expenses and analytics
 - barcode/QR capture integration
 - JPG receipt generation/save/share
+- sari-sari-friendly Android wording across core screens
+- native About SariPOS purpose/creator card
 - Android launcher label renamed to SariPOS
-- successful debug APK builds
+- verified build #15 debug APK artifact
 
 Web workflow-validation additions:
 
@@ -392,10 +414,9 @@ Web workflow-validation additions:
 Still requires native/device work:
 
 - real Android phone end-to-end transaction testing
-- finish replacing remaining old development-name text inside native Compose screens
-- port About SariPOS to native Settings together with the customization UI
 - native cash-loan port after web workflow approval
-- native appearance/custom-term settings and `.posconfig` import/export
+- native Light/Dark/System appearance and custom-term settings
+- native `.posconfig` import/export
 - Android `.pos` import/export
 - product QR label generation
 - direct Bluetooth thermal-printer support
