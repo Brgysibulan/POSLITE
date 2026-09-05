@@ -2,6 +2,60 @@
 
 All notable POSlite development changes are documented here.
 
+## [0.2.0] - 2026-09-05
+
+### Added
+
+- Android smartphone-first web interface with mobile bottom navigation: Home, Sell, Products, Analytics, and More.
+- More navigation drawer for Purchases, Inventory, Credit, Expenses, Reports, and Settings.
+- IndexedDB database version 2 with new `purchases` and `movements` stores.
+- Base-unit inventory model supporting piece, gram, and milliliter products.
+- Multiple selling and purchasing units per product with configurable base conversion quantity and selling price.
+- Common sari-sari store unit patterns such as piece/pack/box and gram/250 g/500 g/1 kg/sack.
+- Decimal quantity selling for weight/liquid products while keeping piece products whole-number based.
+- Optional barcode field for products.
+- Duplicate barcode validation.
+- Barcode-aware search and exact barcode + Enter lookup for keyboard-style scanners.
+- Purchases / Stock In workflow with supplier, date, multiple line items, product, purchase unit, quantity, line cost, purchase total, and generated purchase reference.
+- Automatic purchase-unit to base-unit stock conversion.
+- Weighted-average inventory costing after purchases.
+- Historical cost basis captured on completed sales.
+- Stock movement ledger for opening stock/manual adjustments, purchases, and sales.
+- Manual stock adjustment notes/reasons.
+- Product Profitability Analytics with quantity sold, sales, COGS, gross profit, and margin.
+- Product Analytics detail view with current stock, weighted cost, sales, COGS, profit, margin, purchased quantity, purchase spend, barcode, and configured units.
+- Whole-store Analytics with Sales, COGS, Gross Profit, Expenses, Estimated Net Profit, Purchase Spend, product insights, low-stock insight, credit insight, and sales trend.
+- Reports expanded with COGS, gross profit, expenses, estimated net, purchase spending, and transaction profit.
+- CSV report export now includes COGS and gross profit.
+- `.pos` schema version 2 including products/unit conversions, barcode, purchases, stock movements, sales, customers, expenses, and settings.
+- `.pos` schema-1 import compatibility and automatic legacy product normalization.
+- Service Worker cache bumped to `poslite-v0.2.0`.
+
+### Changed
+
+- Product stock now uses a single base-unit source rather than treating pack/piece/kilo as separate inventories.
+- Purchase spending is tracked separately from operating expenses; inventory cost becomes COGS when the item is sold.
+- Gross Profit is calculated as Sales minus COGS.
+- Estimated Net Profit is calculated as Gross Profit minus recorded operating expenses.
+- Credit/utang sales count when goods leave inventory; later collections are not counted again as new sales.
+- Transaction discounts are allocated proportionally across items for product-level profitability calculations.
+- Existing v0.1 products are normalized into the v0.2 base-unit data model.
+- Product base unit is locked after creation in the current interface to protect existing stock and historical conversions.
+- Web UI is now optimized primarily for portrait smartphone use while retaining desktop/tablet support.
+
+### Known limitations
+
+- Camera barcode scanning is not implemented yet.
+- QR Code scanning/generation is not implemented yet.
+- `.pos` backups are not encrypted yet.
+- Automatic rotating backup is not implemented yet.
+- Supplier master/profile management is not implemented yet; supplier is currently recorded as free text on purchases.
+- Dedicated damaged/expired stock workflows are not implemented yet.
+- Hold/resume sale and void/refund/return workflows are not implemented yet.
+- Receipt printing and Bluetooth thermal-printer support are not implemented yet.
+- Multi-user/PIN permissions are not implemented yet.
+- Native Android implementation is still a future phase after web stabilization.
+
 ## [0.1.0] - 2026-09-05
 
 ### Added
@@ -25,33 +79,16 @@ All notable POSlite development changes are documented here.
 
 ### Fixed
 
-- Dialog Cancel and Close controls are now explicitly non-submitting so they cannot accidentally trigger a form save.
+- Dialog Cancel and Close controls are explicitly non-submitting so they cannot accidentally trigger a form save.
 
 ### Technical decisions
 
 - Web-first development before native Android implementation.
-- POSlite is now explicitly Android smartphone-first; the web build remains the workflow/prototype base and should use portrait-first, touch-first, minimal-typing design decisions.
-- Vanilla HTML/CSS/JavaScript for the initial MVP.
-- IndexedDB selected instead of `localStorage` for operational data.
-- `.pos` defined as POSlite's portable backup extension.
+- POSlite is Android smartphone-first; the web build remains the workflow/prototype base.
+- Vanilla HTML/CSS/JavaScript was selected for the initial MVP.
+- IndexedDB was selected instead of `localStorage` for operational data.
+- `.pos` was defined as POSlite's portable backup extension.
 - Native Android remains the target after web stabilization, planned with Kotlin, Jetpack Compose, and Room/SQLite.
 - Basic automated syntax/file validation is kept in the repository to protect the working web baseline.
-- Barcode and QR Code support are official roadmap items.
-- Planned barcode support includes product barcode fields, barcode search, camera scanning where supported, and compatibility with keyboard-style USB/Bluetooth scanners.
-- Planned QR Code support includes QR product lookup, POSlite-generated QR labels for custom/unbarcoded products, and optional receipt transaction-reference QR codes.
-- Barcode/QR identifiers will be included in `.pos` backup/restore after the scanning feature is implemented.
-- A base-unit inventory model is now part of the roadmap so products can be purchased in bulk and sold by smaller units such as kilo, half-kilo, pack, piece, sachet, bottle, case, stick, or ream.
-- Purchases/Stock In will be recorded as transactions with supplier, quantity, purchase unit, converted base quantity, purchase cost, and stock movement history.
-- Weighted-average cost is the planned default costing method for inventory purchases, while completed sales preserve their historical cost basis.
-- Profitability Analytics is planned at both per-product and whole-store level, including revenue, COGS, gross profit, margin, expenses, estimated net profit, inventory value, and product rankings.
-- Credit sales will count as sales when goods leave inventory; later credit collections will be tracked separately as cash inflow to avoid double-counting revenue.
-
-### Known limitations
-
-- `.pos` backups are not encrypted yet.
-- Advanced tingi/unit conversion is not implemented yet.
-- Purchases/Stock In ledger and weighted-average costing are planned but not yet implemented.
-- Per-item and full-store profitability Analytics based on purchase history are planned but not yet implemented.
-- Barcode scanning is planned but not yet implemented.
-- QR Code scanning/generation is planned but not yet implemented.
-- Supplier, receipt printer, hold sale, void/refund, and multi-user permission features are planned for later versions.
+- Barcode and QR Code support became official roadmap items.
+- The base-unit inventory, purchase, weighted-costing, and product-profitability work was planned here and implemented in v0.2.0.
