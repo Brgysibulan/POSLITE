@@ -6,6 +6,10 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Added
 
+- Full-sale void/return workflow with required reason, duplicate-void guard, stock restoration, reversal movement records, and credit-balance reversal safeguards.
+- Dedicated inventory actions for damaged goods, expired goods, and physical stock counts.
+- Sale lifecycle fields (`status`, `voided_at`, and `void_reason`) with a non-destructive database migration to version 3.
+- Native backup schema version 2 with backward restore support for schema-1 native backups.
 - Native Android full-database `.pos` export and restore through the Android system file picker.
 - Backup preview showing product, sale, purchase, customer, expense, and export-date counts before destructive restore confirmation.
 - SQLite `draft_cart` persistence so an unfinished native sale recovers after app restart or process death.
@@ -17,13 +21,15 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Changed
 
-- Native development version advanced to `0.5.0-native-dev` with version code 3.
+- Native development version advanced to `0.6.0-native-dev` with version code 4.
+- Dashboard and analytics exclude voided sales and their COGS while keeping the original audit record.
 - Native restore replaces local operational data only after format/schema validation and explicit confirmation, inside one rollback-safe SQLite transaction.
 - Analytics 7/30/90/365-day windows now start at local midnight of the first included calendar day.
 - Purchase, product, stock adjustment, credit payment, expense, and checkout database boundaries now reject invalid values.
 
 ### Fixed
 
+- A completed sale is no longer the only possible lifecycle state; authorized correction can restore stock without deleting transaction history.
 - Added the required Material 3 experimental API opt-in identified by the first portrait-checkout CI compile.
 - Corrected the pre-Android-10 receipt FileProvider path from the legacy `Pictures/POSlite` folder to `Pictures/SariPOS`.
 - Stock removal no longer silently clamps an excessive deduction to zero.

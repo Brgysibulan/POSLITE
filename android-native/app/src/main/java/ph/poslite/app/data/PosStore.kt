@@ -80,7 +80,9 @@ data class SaleReceipt(
     val total: Double,
     val cash: Double,
     val change: Double,
-    val lines: List<ReceiptLine>
+    val lines: List<ReceiptLine>,
+    val status: String = "completed",
+    val voidReason: String = ""
 )
 
 data class DashboardStats(
@@ -155,7 +157,10 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
                 customer_id INTEGER,
                 customer_name TEXT NOT NULL DEFAULT '',
                 cash REAL NOT NULL DEFAULT 0,
-                change_amount REAL NOT NULL DEFAULT 0
+                change_amount REAL NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'completed',
+                voided_at INTEGER,
+                void_reason TEXT NOT NULL DEFAULT ''
             )""".trimIndent()
         )
         db.execSQL(
@@ -247,6 +252,11 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) createDraftCartTable(db)
+        if (oldVersion < 3) {
+            db.execSQL("ALTER TABLE sales ADD COLUMN status TEXT NOT NULL DEFAULT 'completed'")
+            db.execSQL("ALTER TABLE sales ADD COLUMN voided_at INTEGER")
+            db.execSQL("ALTER TABLE sales ADD COLUMN void_reason TEXT NOT NULL DEFAULT ''")
+        }
     }
 
     private fun createDraftCartTable(db: SQLiteDatabase) {
@@ -430,18 +440,30 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
             val old = product.stockBase
             val next = when (mode) {
                 "add" -> old + max(0.0, quantity)
-                "remove" -> {
+                "remove", "damaged", "expired" -> {
                     require(quantity <= old + 0.0000001) { "Mas mataas ang ibabawas kaysa kasalukuyang stock." }
                     old - quantity
                 }
-                "set" -> max(0.0, quantity)
-                else -> old
+                "set", "count" -> max(0.0, quantity)
+                else -> error("Hindi valid ang stock action.")
             }
             db.update("products", ContentValues().apply {
                 put("stock_base", next)
                 put("updated_at", System.currentTimeMillis())
             }, "id=?", arrayOf(productId.toString()))
-            insertMovement(db, productId, "adjustment", next - old, System.currentTimeMillis(), "", note.ifBlank { "Manual adjustment" }, product.avgCostBase)
+            val movementType = when (mode) {
+                "damaged" -> "damaged"
+                "expired" -> "expired"
+                "count" -> "stock_count"
+                else -> "adjustment"
+            }
+            val defaultNote = when (mode) {
+                "damaged" -> "Sirang paninda"
+                "expired" -> "Expired na paninda"
+                "count" -> "Physical stock count"
+                else -> "Manual adjustment"
+            }
+            insertMovement(db, productId, movementType, next - old, System.currentTimeMillis(), "", note.ifBlank { defaultNote }, product.avgCostBase)
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
@@ -587,7 +609,7 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
         val db = readableDatabase
         val rows = mutableListOf<SaleReceipt>()
         db.rawQuery(
-            "SELECT id,number,created_at,customer_name,payment_type,subtotal,discount,total,cash,change_amount FROM sales ORDER BY created_at DESC LIMIT ?",
+            "SELECT id,number,created_at,customer_name,payment_type,subtotal,discount,total,cash,change_amount,status,void_reason FROM sales ORDER BY created_at DESC LIMIT ?",
             arrayOf(limit.toString())
         ).use { c ->
             while (c.moveToNext()) {
@@ -596,10 +618,75 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
                 db.rawQuery("SELECT product_name,unit_label,qty,unit_price,amount FROM sale_items WHERE sale_id=? ORDER BY id", arrayOf(saleId.toString())).use { items ->
                     while (items.moveToNext()) lines += ReceiptLine(items.getString(0), items.getString(1), items.getDouble(2), items.getDouble(3), items.getDouble(4))
                 }
-                rows += SaleReceipt(saleId, c.getString(1), c.getLong(2), c.getString(3), c.getString(4), c.getDouble(5), c.getDouble(6), c.getDouble(7), c.getDouble(8), c.getDouble(9), lines)
+                rows += SaleReceipt(saleId, c.getString(1), c.getLong(2), c.getString(3), c.getString(4), c.getDouble(5), c.getDouble(6), c.getDouble(7), c.getDouble(8), c.getDouble(9), lines, c.getString(10), c.getString(11))
             }
         }
         return rows
+    }
+
+    fun voidSale(saleId: Long, reason: String) {
+        require(reason.isNotBlank()) { "Maglagay ng dahilan ng void/return." }
+        val db = writableDatabase
+        val now = System.currentTimeMillis()
+        db.beginTransaction()
+        try {
+            var total = 0.0
+            var paymentType = ""
+            var customerId: Long? = null
+            var saleNumber = ""
+            var saleCreatedAt = 0L
+            db.rawQuery("SELECT total,payment_type,customer_id,status,number,created_at FROM sales WHERE id=?", arrayOf(saleId.toString())).use { c ->
+                require(c.moveToFirst()) { "Hindi makita ang benta." }
+                require(c.getString(3) == "completed") { "Na-void na ang bentang ito." }
+                total = c.getDouble(0)
+                paymentType = c.getString(1)
+                customerId = if (c.isNull(2)) null else c.getLong(2)
+                saleNumber = c.getString(4)
+                saleCreatedAt = c.getLong(5)
+            }
+            db.rawQuery("SELECT product_id,qty_base,cost_base FROM sale_items WHERE sale_id=?", arrayOf(saleId.toString())).use { items ->
+                while (items.moveToNext()) {
+                    val productId = items.getLong(0)
+                    val qtyBase = items.getDouble(1)
+                    val product = getProductRow(db, productId) ?: error("May nawawalang paninda sa benta.")
+                    db.update("products", ContentValues().apply {
+                        put("stock_base", product.stockBase + qtyBase)
+                        put("updated_at", now)
+                    }, "id=?", arrayOf(productId.toString()))
+                    insertMovement(db, productId, "sale_void", qtyBase, now, "VOID-$saleNumber", reason.trim(), items.getDouble(2))
+                }
+            }
+            if (paymentType == "credit") {
+                val id = customerId ?: error("Walang customer ang credit sale.")
+                val customer = getCustomerRow(db, id) ?: error("Hindi makita ang customer.")
+                val laterPayments = queryLong(
+                    db,
+                    "SELECT COUNT(*) FROM credit_ledger WHERE customer_id=? AND entry_type='payment' AND created_at>=?",
+                    arrayOf(id.toString(), saleCreatedAt.toString())
+                )
+                require(laterPayments == 0L) { "Hindi ma-void: may sumunod nang bayad sa account ng customer. I-review muna ang ledger." }
+                require(customer.balance + 0.0000001 >= total) { "Hindi ma-void: may naitalang bayad na para sa utang na ito." }
+                db.update("customers", ContentValues().apply {
+                    put("balance", max(0.0, customer.balance - total))
+                    put("updated_at", now)
+                }, "id=?", arrayOf(id.toString()))
+                db.insertOrThrow("credit_ledger", null, ContentValues().apply {
+                    put("customer_id", id)
+                    put("entry_type", "sale_void")
+                    put("amount", -total)
+                    put("created_at", now)
+                    put("reference", "VOID-$saleNumber")
+                })
+            }
+            db.update("sales", ContentValues().apply {
+                put("status", "voided")
+                put("voided_at", now)
+                put("void_reason", reason.trim())
+            }, "id=?", arrayOf(saleId.toString()))
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
     }
 
     fun getCustomers(): List<Customer> {
@@ -668,9 +755,9 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
     fun getDashboardStats(): DashboardStats {
         val db = readableDatabase
         val start = startOfToday()
-        val sales = queryDouble(db, "SELECT COALESCE(SUM(total),0) FROM sales WHERE created_at>=?", arrayOf(start.toString()))
-        val tx = queryLong(db, "SELECT COUNT(*) FROM sales WHERE created_at>=?", arrayOf(start.toString())).toInt()
-        val cogs = queryDouble(db, "SELECT COALESCE(SUM(qty_base*cost_base),0) FROM sale_items WHERE sale_id IN (SELECT id FROM sales WHERE created_at>=?)", arrayOf(start.toString()))
+        val sales = queryDouble(db, "SELECT COALESCE(SUM(total),0) FROM sales WHERE status='completed' AND created_at>=?", arrayOf(start.toString()))
+        val tx = queryLong(db, "SELECT COUNT(*) FROM sales WHERE status='completed' AND created_at>=?", arrayOf(start.toString())).toInt()
+        val cogs = queryDouble(db, "SELECT COALESCE(SUM(qty_base*cost_base),0) FROM sale_items WHERE sale_id IN (SELECT id FROM sales WHERE status='completed' AND created_at>=?)", arrayOf(start.toString()))
         val credit = queryDouble(db, "SELECT COALESCE(SUM(balance),0) FROM customers", emptyArray())
         val low = queryLong(db, "SELECT COUNT(*) FROM products WHERE stock_base<=low_stock_base", emptyArray()).toInt()
         return DashboardStats(sales, tx, sales - cogs, credit, low)
@@ -678,8 +765,8 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
 
     fun getAnalytics(fromMillis: Long): AnalyticsSummary {
         val db = readableDatabase
-        val sales = queryDouble(db, "SELECT COALESCE(SUM(total),0) FROM sales WHERE created_at>=?", arrayOf(fromMillis.toString()))
-        val cogs = queryDouble(db, "SELECT COALESCE(SUM(si.qty_base*si.cost_base),0) FROM sale_items si JOIN sales s ON s.id=si.sale_id WHERE s.created_at>=?", arrayOf(fromMillis.toString()))
+        val sales = queryDouble(db, "SELECT COALESCE(SUM(total),0) FROM sales WHERE status='completed' AND created_at>=?", arrayOf(fromMillis.toString()))
+        val cogs = queryDouble(db, "SELECT COALESCE(SUM(si.qty_base*si.cost_base),0) FROM sale_items si JOIN sales s ON s.id=si.sale_id WHERE s.status='completed' AND s.created_at>=?", arrayOf(fromMillis.toString()))
         val expenses = queryDouble(db, "SELECT COALESCE(SUM(amount),0) FROM expenses WHERE created_at>=?", arrayOf(fromMillis.toString()))
         val purchases = queryDouble(db, "SELECT COALESCE(SUM(total_cost),0) FROM purchases WHERE created_at>=?", arrayOf(fromMillis.toString()))
         return AnalyticsSummary(sales, cogs, sales - cogs, expenses, sales - cogs - expenses, purchases)
@@ -792,7 +879,7 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
         return JSONObject().apply {
             put("format", BACKUP_FORMAT)
             put("schemaVersion", BACKUP_SCHEMA)
-            put("appVersion", "0.5.0-native-dev")
+            put("appVersion", "0.6.0-native-dev")
             put("exportedAt", System.currentTimeMillis())
             put("tables", tables)
         }.toString(2)
@@ -824,9 +911,9 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
                     val row = rows.getJSONObject(index)
                     val values = ContentValues()
                     columns.forEach { column ->
-                        if (!row.has(column) || row.isNull(column)) {
+                        if (row.has(column) && row.isNull(column)) {
                             values.putNull(column)
-                        } else {
+                        } else if (row.has(column)) {
                             when (val value = row.get(column)) {
                                 is Int -> values.put(column, value)
                                 is Long -> values.put(column, value)
@@ -848,7 +935,7 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
     private fun parseBackup(text: String): JSONObject {
         val root = runCatching { JSONObject(text) }.getOrElse { error("Hindi mabasa ang .pos file.") }
         require(root.optString("format") == BACKUP_FORMAT) { "Hindi ito SariPOS Android backup." }
-        require(root.optInt("schemaVersion") == BACKUP_SCHEMA) { "Hindi suportado ang backup version na ito." }
+        require(root.optInt("schemaVersion") in 1..BACKUP_SCHEMA) { "Hindi suportado ang backup version na ito." }
         val tables = root.optJSONObject("tables") ?: error("Kulang ang backup data.")
         BACKUP_TABLES.forEach { (table, _) -> require(tables.optJSONArray(table) != null) { "Kulang ang $table sa backup." } }
         return root
@@ -856,15 +943,15 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
 
     companion object {
         private const val DB_NAME = "poslite-native.db"
-        private const val DB_VERSION = 2
+        private const val DB_VERSION = 3
         private const val BACKUP_FORMAT = "SariPOS-Android"
-        private const val BACKUP_SCHEMA = 1
+        private const val BACKUP_SCHEMA = 2
 
         private val BACKUP_TABLES = linkedMapOf(
             "products" to arrayOf("id", "name", "category", "barcode", "base_unit", "stock_base", "low_stock_base", "avg_cost_base", "created_at", "updated_at"),
             "product_units" to arrayOf("id", "product_id", "label", "qty_base", "sell_price", "sale_enabled", "purchase_enabled"),
             "customers" to arrayOf("id", "name", "contact", "balance", "created_at", "updated_at"),
-            "sales" to arrayOf("id", "number", "created_at", "subtotal", "discount", "total", "payment_type", "customer_id", "customer_name", "cash", "change_amount"),
+            "sales" to arrayOf("id", "number", "created_at", "subtotal", "discount", "total", "payment_type", "customer_id", "customer_name", "cash", "change_amount", "status", "voided_at", "void_reason"),
             "sale_items" to arrayOf("id", "sale_id", "product_id", "product_name", "unit_label", "qty", "qty_base", "unit_price", "cost_base", "amount"),
             "purchases" to arrayOf("id", "number", "supplier", "created_at", "total_cost"),
             "purchase_items" to arrayOf("id", "purchase_id", "product_id", "unit_label", "qty", "qty_base", "total_cost"),

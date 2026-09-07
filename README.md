@@ -5,7 +5,7 @@ SariPOS is a native Android, offline-first point-of-sale and inventory app for s
 ## Current development status
 
 - **Web reference:** v0.2.0 at repository root
-- **Native Android development:** v0.5.0-native-dev under `android-native/`
+- **Native Android development:** v0.6.0-native-dev under `android-native/`
 - **Primary product direction:** Android smartphone-first
 - **First verified native APK baseline:** commit `9f4acb298eb71cb13da5dcb863c1749acca50507`
 - **Latest verified native baseline:** build #20 — SUCCESS
@@ -163,7 +163,7 @@ This web build is intentionally preserved while the native Android app is stabil
 5. Add POSlite-generated product QR labels.
 6. Harden scanner behavior; optionally move to a fully bundled CameraX + ML Kit scanner if complete offline model availability is required.
 7. Add direct Bluetooth thermal-printer integration.
-8. Add hold/resume, void/refund/return, and damaged/expired inventory workflows.
+8. Extend automatic cart recovery and full-sale void/return into named multi-cart holds, partial returns/exchanges, and refund tender tracking; add loss analytics for damaged/expired stock.
 9. Add encrypted/protected backups.
 
 ## Documentation
@@ -171,6 +171,7 @@ This web build is intentionally preserved while the native Android app is stabil
 - `docs/PROJECT.md` — master project documentation
 - `docs/ANDROID-NATIVE.md` — native Android architecture, successful build baseline, and migration status
 - `docs/BACKUP-RESTORE.md` — native backup format, restore guarantees, limitations, and device-test checklist
+- `docs/TRANSACTION-LIFECYCLE.md` — sale void/return, stock reversal, damaged/expired stock, and physical counts
 - `docs/BARCODE-SCANNER.md` — scanner behavior
 - `docs/RECEIPTS.md` — receipt behavior
 - `CHANGELOG.md` — implementation history

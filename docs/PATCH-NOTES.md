@@ -1,6 +1,47 @@
 # SariPOS Patch Notes
 
-## Latest patch — Native Android Data Safety Foundation
+## Latest patch — Transaction Correction and Stock Loss Controls
+
+**Date:** 2026-09-07
+**Track:** `0.6.0-native-dev`
+**Status:** Source complete / GitHub Actions and real-device verification pending
+
+### Added
+
+- **Void / Return** on completed receipts with a required reason and explicit confirmation.
+- Atomic full-sale reversal that restores every sold base-unit quantity and records `sale_void` stock movements.
+- Credit-sale reversal that reduces the customer balance and adds a credit-ledger reversal entry.
+- Conservative credit safeguard: void is blocked when a customer payment was recorded after that credit sale, because the current ledger cannot safely allocate a payment to one invoice.
+- Dedicated **Sirang paninda**, **Expired na paninda**, and **Physical count** inventory actions.
+- Sale status, void timestamp, and void reason columns through database migration version 3.
+- Voided markings in receipt history, receipt detail, text sharing, and generated JPG receipts.
+- Backup schema version 2 for the sale lifecycle fields, while restore still accepts native schema-1 backups and supplies safe defaults.
+
+### Accounting behavior
+
+- Voided sales remain in history for auditability; rows are not deleted.
+- Dashboard sales, transaction count, COGS, gross profit, and date-range analytics include only completed sales.
+- A full void restores stock at the original sold base quantity. It does not recalculate weighted-average inventory cost.
+- Damaged/expired deductions retain the product's current average base cost on their stock-movement record.
+- Physical count writes only the difference between previous and counted stock.
+
+### Current boundary
+
+- This patch provides full-sale correction, not partial line-item returns or exchanges.
+- Credit void is deliberately blocked after a later customer payment until invoice-level payment allocation is implemented.
+
+### Verification checklist
+
+- GitHub Actions Android build: pending.
+- Void cash and credit sales and verify stock, movements, balances, receipt status, dashboard, and analytics.
+- Confirm second void attempts are rejected.
+- Confirm credit void is rejected after a later customer payment.
+- Record damaged, expired, and physical-count changes for piece and gram/kilo products.
+- Restore both native backup schema 1 and schema 2.
+
+---
+
+## Previous patch — Native Android Data Safety Foundation
 
 **Date:** 2026-09-07
 **Track:** `0.5.0-native-dev`

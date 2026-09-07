@@ -730,14 +730,19 @@ private fun AdjustmentDialog(c: PosController, product: Product, dismiss: () -> 
         title = { Text("Ayusin: ${product.name}") },
         text = {
             Column {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    listOf("add" to "Dagdag", "remove" to "Bawas", "set" to "Itakda").forEach { (m, label) -> if (mode == m) Button(onClick = {}) { Text(label) } else OutlinedButton(onClick = { mode = m }) { Text(label) } }
-                }
-                OutlinedTextField(qty, { qty = it }, label = { Text("Dami") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                val actions = listOf(
+                    "add" to "Dagdag stock",
+                    "remove" to "Bawas stock",
+                    "damaged" to "Sirang paninda",
+                    "expired" to "Expired na paninda",
+                    "count" to "Physical count"
+                )
+                PickerButton("Stock action", actions.first { it.first == mode }.second, actions.map { it.second }) { mode = actions[it].first }
+                OutlinedTextField(qty, { qty = it }, label = { Text(if (mode == "count") "Aktuwal na stock" else "Dami") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
                 OutlinedTextField(note, { note = it }, label = { Text("Dahilan / note") })
             }
         },
-        confirmButton = { Button(onClick = { runCatching { c.store.adjustStock(product.id, mode, requiredNumber(qty, "dami", allowZero = mode == "set"), note); c.refresh(); dismiss() }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() } }) { Text("I-save") } },
+        confirmButton = { Button(onClick = { runCatching { c.store.adjustStock(product.id, mode, requiredNumber(qty, "dami", allowZero = mode == "count"), note); c.refresh(); dismiss() }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() } }) { Text("I-save") } },
         dismissButton = { TextButton(onClick = dismiss) { Text("Kanselahin") } }
     )
 }
@@ -834,22 +839,63 @@ private fun AnalyticsCards(a: AnalyticsSummary) {
 
 @Composable
 private fun ReportsScreen(c: PosController, back: () -> Unit) {
+    var voiding by remember { mutableStateOf<SaleReceipt?>(null) }
     Column(Modifier.fillMaxSize()) {
         Header("Resibo / Talaan", "Mga recent na resibo ng benta", back)
         LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             items(c.receipts, key = { it.id }) { r ->
-                Card(
-                    onClick = { c.activeReceipt = r },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-                ) {
+                Card(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) { Text(r.number, fontWeight = FontWeight.Bold); Text("${fmtDate(r.createdAt)} · ${r.customerName}") }
-                        Text(money(r.total), fontWeight = FontWeight.Bold)
+                        Column(Modifier.weight(1f)) {
+                            Text(r.number, fontWeight = FontWeight.Bold)
+                            Text("${fmtDate(r.createdAt)} · ${r.customerName}")
+                            if (r.status == "voided") Text("VOIDED · ${r.voidReason}", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
+                            Text(money(r.total), fontWeight = FontWeight.Bold)
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            TextButton(onClick = { c.activeReceipt = r }) { Text("Tingnan") }
+                            if (r.status == "completed") TextButton(onClick = { voiding = r }) { Text("Void / Return") }
+                        }
                     }
                 }
             }
         }
     }
+    voiding?.let { receipt ->
+        VoidSaleDialog(c, receipt) { voiding = null }
+    }
+}
+
+@Composable
+private fun VoidSaleDialog(c: PosController, receipt: SaleReceipt, dismiss: () -> Unit) {
+    val context = LocalContext.current
+    var reason by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = dismiss,
+        title = { Text("I-void at ibalik ang stock?") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("${receipt.number} · ${money(receipt.total)}")
+                Text("Ibabalik ang lahat ng stock at aalisin ang benta sa totals. Hindi ito puwedeng ulitin.")
+                if (receipt.paymentType == "credit") Text("Kung may naitalang bayad na sa utang na ito, iba-block ang void para hindi masira ang balance.")
+                OutlinedTextField(reason, { reason = it }, label = { Text("Dahilan ng void / return") }, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                runCatching {
+                    c.store.voidSale(receipt.id, reason)
+                    c.refresh()
+                    dismiss()
+                }.onSuccess {
+                    Toast.makeText(context, "Na-void ang benta at naibalik ang stock.", Toast.LENGTH_SHORT).show()
+                }.onFailure {
+                    Toast.makeText(context, it.message ?: "Hindi ma-void ang benta.", Toast.LENGTH_LONG).show()
+                }
+            }) { Text("I-confirm ang Void") }
+        },
+        dismissButton = { TextButton(onClick = dismiss) { Text("Kanselahin") } }
+    )
 }
 
 @Composable
@@ -981,6 +1027,10 @@ private fun ReceiptDialog(receipt: SaleReceipt, settings: StoreSettings, onDismi
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(settings.storeName, fontWeight = FontWeight.Bold)
+                if (receipt.status == "voided") {
+                    Text("VOIDED / RETURNED", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text("Dahilan: ${receipt.voidReason}")
+                }
                 Text(fmtDate(receipt.createdAt))
                 Text("Customer: ${receipt.customerName}")
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))

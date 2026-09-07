@@ -19,11 +19,13 @@ No internet connection or monthly service is required. The system picker lets th
 
 - File extension: `.pos`
 - `format`: `SariPOS-Android`
-- `schemaVersion`: `1`
+- Current `schemaVersion`: `2`
 - Human-readable JSON payload
 - Exported tables: `products`, `product_units`, `customers`, `sales`, `sale_items`, `purchases`, `purchase_items`, `stock_movements`, `credit_ledger`, `expenses`, `settings`, and `draft_cart`
 
 IDs and historical values are preserved. This keeps sale-item cost snapshots, transaction references, customer balances, movement history, settings, and configured product-unit conversions intact.
+
+Schema 2 adds `status`, `voided_at`, and `void_reason` to native sale backups. Restore accepts schema-1 native backups and uses the database defaults (`completed`, no void timestamp, blank reason) for those missing fields.
 
 ## Restore guarantees
 
@@ -37,7 +39,7 @@ SQLite database version 2 adds `draft_cart` through a non-destructive migration.
 
 ## Compatibility limitation
 
-The root web/PWA build uses `format: POSlite` and a different schema/data shape. Native `SariPOS-Android` schema-1 restore intentionally rejects those files instead of guessing field mappings and risking incorrect cost, stock, or credit data. Cross-platform conversion is planned but is not part of this release.
+The root web/PWA build uses `format: POSlite` and a different schema/data shape. Native `SariPOS-Android` restore intentionally rejects those files instead of guessing field mappings and risking incorrect cost, stock, or credit data. Cross-platform conversion is planned but is not part of this release.
 
 ## Device-test checklist
 

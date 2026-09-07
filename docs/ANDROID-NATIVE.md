@@ -11,7 +11,17 @@ POSlite now has a native Android implementation under `android-native/`. The exi
 
 A newer Android receipt fix is being validated after a real-device report that the old PDF/print action could close the app.
 
-Current development track: **`0.5.0-native-dev` / version code 3**. This track adds native data backup/restore and draft-cart recovery. GitHub Actions native build #21 passed at commit `4e5ea36b849b954155c08646b55d789667470804`; real-device verification is next.
+Current development track: **`0.6.0-native-dev` / version code 4**. This track adds auditable full-sale void/return and dedicated stock-loss/count controls. The preceding data-safety track passed GitHub Actions native build #21 at commit `4e5ea36b849b954155c08646b55d789667470804`; the new transaction-lifecycle build is pending verification.
+
+## Transaction lifecycle foundation — 2026-09-07
+
+- Full-sale void/return with required reason and one-time status guard.
+- Original sale and item rows retained for audit.
+- Base-unit stock restoration and separate reversal movements.
+- Credit balance/ledger reversal with conservative post-payment blocking.
+- Voided sales excluded from dashboard and analytics sales/COGS.
+- Dedicated damaged, expired, and physical-count stock actions.
+- Database migration version 3 and native backup schema version 2.
 
 ## Data safety foundation — 2026-09-07
 
@@ -282,7 +292,7 @@ This allows continued GitHub Pages testing, side-by-side behavior comparison, an
 - add product QR label generation
 - fully bundled offline CameraX + ML Kit scanner if required
 - direct Bluetooth thermal-printer integration later
-- void/refund/return flow
-- damaged/expired inventory flow
-- hold/resume sale
+- partial returns, exchanges, and refund tender tracking beyond full-sale void/return
+- damaged/expired loss analytics and approval controls
+- named multi-cart hold/resume beyond automatic current-cart recovery
 - encrypted backups
