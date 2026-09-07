@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The `0.7.0-native-dev` track adds a simple offline drawer count for a sari-sari store. It helps the owner compare the cash that should be present with the amount physically counted, without requiring an online account or subscription.
+The `0.7.0-native-dev` track adds a simple offline drawer count for a sari-sari store. GitHub Actions native build #23 passed at commit `c62c7bf3a7bbe454e2a0b9010dd720f0495d4b3c`. It helps the owner compare the cash that should be present with the amount physically counted, without requiring an online account or subscription.
 
 ## Period rule
 

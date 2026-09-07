@@ -11,7 +11,7 @@ POSlite now has a native Android implementation under `android-native/`. The exi
 
 A newer Android receipt fix is being validated after a real-device report that the old PDF/print action could close the app.
 
-Current development track: **`0.7.0-native-dev` / version code 5**. This track adds shift-aware cash closing, customer credit-ledger viewing, and cost-valued damaged/expired Analytics. The preceding transaction-lifecycle track passed GitHub Actions native build #22 at commit `69df5615b2f7eebaa68efbd7c8b724464129d8e9`; the new operational-controls build is pending verification.
+Current development track: **`0.7.0-native-dev` / version code 5**. This track adds shift-aware cash closing, customer credit-ledger viewing, and cost-valued damaged/expired Analytics. GitHub Actions native build #23 passed at commit `c62c7bf3a7bbe454e2a0b9010dd720f0495d4b3c`; real-device verification is next.
 
 ## Operational controls — 2026-09-07
 

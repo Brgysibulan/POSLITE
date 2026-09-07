@@ -16,6 +16,7 @@
 **Verified portrait checkout baseline:** `31a2706b1c11e1c6a7b796a6b6777f7a3202564b` — build #20 SUCCESS
 **Verified native data-safety baseline:** `4e5ea36b849b954155c08646b55d789667470804` — build #21 SUCCESS
 **Verified native transaction-lifecycle baseline:** `69df5615b2f7eebaa68efbd7c8b724464129d8e9` — build #22 SUCCESS
+**Verified native operational-controls baseline:** `c62c7bf3a7bbe454e2a0b9010dd720f0495d4b3c` — build #23 SUCCESS
 
 ## Mandatory project rule
 
