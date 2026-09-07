@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-07
 **Track:** `0.4.0-native-dev`
-**Status:** Source completed / GitHub Actions and real-device verification required
+**Status:** GitHub Actions build successful / real-device verification next
 
 ### Added
 
@@ -41,7 +41,10 @@
 
 ### Verification checklist
 
-- GitHub Actions `Build SariPOS Native Android` must pass before this becomes the next verified baseline.
+- GitHub Actions `Build SariPOS Native Android` run #20 passed at commit `31a2706b1c11e1c6a7b796a6b6777f7a3202564b`.
+- Run ID: `34116453362`.
+- Artifact: `SariPOS-native-debug` (`10016481499`).
+- Artifact ZIP digest: `sha256:aa0134d6ffe070d65b05003fe75522976802771ebb0037a445804feb31c40ab3`.
 - Test on a portrait Android phone: search/scan → add products → open cart → cash/utang checkout → JPG receipt.
 - Test Save/Share JPG on Android 8–9 and Android 10+.
 - Test invalid and negative inputs across products, purchases, stock, credit payments, expenses, discount, and cash.

@@ -11,7 +11,7 @@ POSlite now has a native Android implementation under `android-native/`. The exi
 
 A newer Android receipt fix is being validated after a real-device report that the old PDF/print action could close the app.
 
-Current development track: **`0.4.0-native-dev` / version code 2**. The 2026-09-07 portrait checkout hardening source is complete and requires GitHub Actions plus real-device verification before it replaces build #18 as the stable native baseline.
+Current development track: **`0.4.0-native-dev` / version code 2**. The 2026-09-07 portrait checkout hardening passed GitHub Actions build #20 at commit `31a2706b1c11e1c6a7b796a6b6777f7a3202564b`; real-device verification is next.
 
 ## Portrait checkout hardening — 2026-09-07
 

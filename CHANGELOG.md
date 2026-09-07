@@ -28,6 +28,10 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 - Existing inventory conversion, weighted-average costing, COGS, credit-stock, package/database compatibility, and web-reference behavior.
 
+### Verified
+
+- Native Android build #20 succeeded at commit `31a2706b1c11e1c6a7b796a6b6777f7a3202564b` with artifact `SariPOS-native-debug`.
+
 ## [Unreleased prior work] - 2026-09-05
 
 ### Added
