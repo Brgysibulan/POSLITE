@@ -6,17 +6,17 @@ import ph.poslite.app.data.SaleReceipt
 import ph.poslite.app.data.StoreSettings
 
 /**
- * Compatibility entry points used by the current receipt dialog.
- * The old print/PDF action now saves a lightweight JPG instead.
- * All failures are caught so a receipt export problem cannot close the POS app.
+ * Compatibility entry points kept for older native callers.
+ * Receipt output is JPG-only; there is no PDF/PrintManager path here.
+ * Failures are caught so receipt export cannot close SariPOS.
  */
 fun printReceipt(context: Context, receipt: SaleReceipt, settings: StoreSettings) {
     runCatching {
         saveReceiptJpg(context, receipt, settings)
     }.onSuccess {
-        Toast.makeText(context, "Receipt JPG saved to Pictures/POSlite.", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, "Naka-save ang receipt JPG sa Pictures/SariPOS.", Toast.LENGTH_LONG).show()
     }.onFailure {
-        Toast.makeText(context, it.message ?: "Could not save receipt JPG.", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, it.message ?: "Hindi ma-save ang receipt JPG.", Toast.LENGTH_LONG).show()
     }
 }
 
@@ -24,6 +24,6 @@ fun shareReceipt(context: Context, receipt: SaleReceipt, settings: StoreSettings
     runCatching {
         shareReceiptJpg(context, receipt, settings)
     }.onFailure {
-        Toast.makeText(context, it.message ?: "Could not share receipt JPG.", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, it.message ?: "Hindi ma-share ang receipt JPG.", Toast.LENGTH_LONG).show()
     }
 }
