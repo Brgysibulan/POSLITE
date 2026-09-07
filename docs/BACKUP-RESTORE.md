@@ -19,13 +19,13 @@ No internet connection or monthly service is required. The system picker lets th
 
 - File extension: `.pos`
 - `format`: `SariPOS-Android`
-- Current `schemaVersion`: `2`
+- Current `schemaVersion`: `3`
 - Human-readable JSON payload
-- Exported tables: `products`, `product_units`, `customers`, `sales`, `sale_items`, `purchases`, `purchase_items`, `stock_movements`, `credit_ledger`, `expenses`, `settings`, and `draft_cart`
+- Exported tables: `products`, `product_units`, `customers`, `sales`, `sale_items`, `purchases`, `purchase_items`, `stock_movements`, `credit_ledger`, `expenses`, `cash_closings`, `settings`, and `draft_cart`
 
 IDs and historical values are preserved. This keeps sale-item cost snapshots, transaction references, customer balances, movement history, settings, and configured product-unit conversions intact.
 
-Schema 2 adds `status`, `voided_at`, and `void_reason` to native sale backups. Restore accepts schema-1 native backups and uses the database defaults (`completed`, no void timestamp, blank reason) for those missing fields.
+Schema 2 adds `status`, `voided_at`, and `void_reason` to native sale backups. Schema 3 adds `cash_closings`. Restore accepts schema-1 and schema-2 native backups, uses safe sale-lifecycle defaults when needed, and treats the absent older cash-closing table as empty.
 
 ## Restore guarantees
 

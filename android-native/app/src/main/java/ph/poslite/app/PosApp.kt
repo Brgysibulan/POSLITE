@@ -58,6 +58,7 @@ import ph.poslite.app.data.AnalyticsSummary
 import ph.poslite.app.data.BackupPreview
 import ph.poslite.app.data.CartLine
 import ph.poslite.app.data.Customer
+import ph.poslite.app.data.CreditEntry
 import ph.poslite.app.data.DashboardStats
 import ph.poslite.app.data.PosStore
 import ph.poslite.app.data.Product
@@ -71,7 +72,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.max
 
-private enum class Screen { HOME, SELL, PRODUCTS, MORE, PURCHASES, INVENTORY, CREDIT, EXPENSES, ANALYTICS, REPORTS, SETTINGS }
+private enum class Screen { HOME, SELL, PRODUCTS, MORE, PURCHASES, INVENTORY, CREDIT, EXPENSES, ANALYTICS, CASH_CLOSING, REPORTS, SETTINGS }
 
 private fun money(value: Double): String = NumberFormat.getCurrencyInstance(Locale("en", "PH")).format(value)
 private fun fmtDate(value: Long): String = SimpleDateFormat("MMM d, yyyy h:mm a", Locale("en", "PH")).format(Date(value))
@@ -204,6 +205,7 @@ fun PosApp() {
                 Screen.CREDIT -> CreditScreen(controller) { screen = Screen.MORE }
                 Screen.EXPENSES -> ExpensesScreen(controller) { screen = Screen.MORE }
                 Screen.ANALYTICS -> AnalyticsScreen(controller) { screen = Screen.MORE }
+                Screen.CASH_CLOSING -> CashClosingScreen(controller) { screen = Screen.MORE }
                 Screen.REPORTS -> ReportsScreen(controller) { screen = Screen.MORE }
                 Screen.SETTINGS -> SettingsScreen(controller) { screen = Screen.MORE }
             }
@@ -630,6 +632,7 @@ private fun MoreScreen(open: (Screen) -> Unit) {
             Screen.CREDIT to "Utang",
             Screen.EXPENSES to "Gastos",
             Screen.ANALYTICS to "Kita at Tubo",
+            Screen.CASH_CLOSING to "Cash Closing",
             Screen.REPORTS to "Resibo / Talaan",
             Screen.SETTINGS to "Ayos ng App"
         )) { (screen, label) ->
@@ -751,6 +754,7 @@ private fun AdjustmentDialog(c: PosController, product: Product, dismiss: () -> 
 private fun CreditScreen(c: PosController, back: () -> Unit) {
     var addCustomer by remember { mutableStateOf(false) }
     var paymentCustomer by remember { mutableStateOf<Customer?>(null) }
+    var ledgerCustomer by remember { mutableStateOf<Customer?>(null) }
     Column(Modifier.fillMaxSize()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) { Header("Utang", "Balanse at bayad ng customer", back) }
@@ -761,7 +765,10 @@ private fun CreditScreen(c: PosController, back: () -> Unit) {
                 Card(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) { Text(customer.name, fontWeight = FontWeight.Bold); Text(customer.contact); Text("Kulang pa ${money(customer.balance)}") }
-                        OutlinedButton(onClick = { paymentCustomer = customer }, enabled = customer.balance > 0) { Text("Bayad") }
+                        Column {
+                            OutlinedButton(onClick = { ledgerCustomer = customer }) { Text("Ledger") }
+                            TextButton(onClick = { paymentCustomer = customer }, enabled = customer.balance > 0) { Text("Bayad") }
+                        }
                     }
                 }
             }
@@ -769,6 +776,51 @@ private fun CreditScreen(c: PosController, back: () -> Unit) {
     }
     if (addCustomer) CustomerDialog(c) { addCustomer = false }
     paymentCustomer?.let { CustomerPaymentDialog(c, it) { paymentCustomer = null } }
+    ledgerCustomer?.let { CustomerLedgerDialog(c, it) { ledgerCustomer = null } }
+}
+
+@Composable
+private fun CustomerLedgerDialog(c: PosController, customer: Customer, dismiss: () -> Unit) {
+    val entries = remember(c.dataVersion, customer.id) { c.store.getCreditLedger(customer.id) }
+    AlertDialog(
+        onDismissRequest = dismiss,
+        title = { Text("Ledger — ${customer.name}") },
+        text = {
+            Column {
+                Text("Kasalukuyang balanse: ${money(c.customers.firstOrNull { it.id == customer.id }?.balance ?: customer.balance)}", fontWeight = FontWeight.Bold)
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                if (entries.isEmpty()) Text("Wala pang entry.")
+                LazyColumn(Modifier.height(320.dp)) {
+                    items(entries, key = { it.id }) { entry ->
+                        CreditLedgerRow(entry)
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = dismiss) { Text("Isara") } }
+    )
+}
+
+@Composable
+private fun CreditLedgerRow(entry: CreditEntry) {
+    val signedAmount = when (entry.type) {
+        "payment" -> -kotlin.math.abs(entry.amount)
+        else -> entry.amount
+    }
+    val label = when (entry.type) {
+        "sale" -> "Utang na benta"
+        "payment" -> "Bayad"
+        "sale_void" -> "Void / Return"
+        else -> entry.type
+    }
+    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(label, fontWeight = FontWeight.Bold)
+            Text(fmtDate(entry.createdAt), style = MaterialTheme.typography.bodySmall)
+            if (entry.reference.isNotBlank()) Text(entry.reference, style = MaterialTheme.typography.bodySmall)
+        }
+        Text((if (signedAmount > 0) "+" else "") + money(signedAmount), color = if (signedAmount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+    }
 }
 
 @Composable
@@ -832,8 +884,65 @@ private fun AnalyticsCards(a: AnalyticsSummary) {
         Stat("Puhunan ng Nabenta", money(a.cogs), Modifier.fillMaxWidth())
         Stat("Tubo sa Paninda", money(a.grossProfit), Modifier.fillMaxWidth())
         Stat("Gastos", money(a.expenses), Modifier.fillMaxWidth())
+        Stat("Lugi sa Sirang Paninda", money(a.damagedLoss), Modifier.fillMaxWidth())
+        Stat("Lugi sa Expired", money(a.expiredLoss), Modifier.fillMaxWidth())
         Stat("Natirang Tubo", money(a.estimatedNet), Modifier.fillMaxWidth())
         Stat("Gastos sa Kumprada", money(a.purchaseSpend), Modifier.fillMaxWidth())
+    }
+}
+
+@Composable
+private fun CashClosingScreen(c: PosController, back: () -> Unit) {
+    val context = LocalContext.current
+    var opening by remember { mutableStateOf("0") }
+    var actual by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+    val openingValue = num(opening).coerceAtLeast(0.0)
+    val preview = remember(c.dataVersion, openingValue) { c.store.previewCashClosing(openingValue) }
+    val history = remember(c.dataVersion) { c.store.getRecentCashClosings() }
+    Column(Modifier.fillMaxSize()) {
+        Header("Cash Closing", "Ihambing ang expected at aktuwal na cash", back)
+        LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Bagong cash closing", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text("Simula ng period: ${fmtDate(preview.periodStart)}", style = MaterialTheme.typography.bodySmall)
+                        OutlinedTextField(opening, { opening = it }, label = { Text("Panimulang cash") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
+                        Text("Cash sales: ${money(preview.cashSales)}")
+                        Text("Bayad sa utang: ${money(preview.creditPayments)}")
+                        Text("Less gastos: ${money(preview.expenses)}")
+                        Text("Expected cash: ${money(preview.expectedCash)}", fontWeight = FontWeight.Bold)
+                        OutlinedTextField(actual, { actual = it }, label = { Text("Aktuwal na bilang ng cash") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
+                        val actualValue = num(actual)
+                        if (actual.isNotBlank()) Text("Variance: ${money(actualValue - preview.expectedCash)}")
+                        OutlinedTextField(note, { note = it }, label = { Text("Note (optional)") }, modifier = Modifier.fillMaxWidth())
+                        Button(onClick = {
+                            runCatching {
+                                c.store.recordCashClosing(requiredNumber(opening, "panimulang cash", allowZero = true), requiredNumber(actual, "aktuwal na cash", allowZero = true), note)
+                                actual = ""; note = ""; c.refresh()
+                            }.onSuccess {
+                                Toast.makeText(context, "Naka-save ang cash closing.", Toast.LENGTH_SHORT).show()
+                            }.onFailure {
+                                Toast.makeText(context, it.message ?: "Hindi ma-save ang closing.", Toast.LENGTH_LONG).show()
+                            }
+                        }, modifier = Modifier.fillMaxWidth()) { Text("I-save ang Cash Closing") }
+                    }
+                }
+            }
+            if (history.isNotEmpty()) item { Text("Mga nakaraang closing", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp)) }
+            items(history, key = { it.id }) { close ->
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text(fmtDate(close.closedAt), fontWeight = FontWeight.Bold)
+                        Text("Expected ${money(close.expectedCash)} · Aktuwal ${money(close.actualCash)}")
+                        Text("Variance ${money(close.variance)}", color = if (close.variance == 0.0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
+                        if (close.note.isNotBlank()) Text(close.note, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+            item { Spacer(Modifier.height(24.dp)) }
+        }
     }
 }
 

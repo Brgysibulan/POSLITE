@@ -6,6 +6,10 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Added
 
+- Native shift/day cash closing with opening cash, cash sales, credit payments, expenses, expected cash, actual cash, variance, notes, and recent history.
+- Customer credit ledger viewer for sales, payments, references, and void reversals.
+- Damaged and expired inventory-loss values in Analytics.
+- `cash_closings` database table through non-destructive migration version 4 and native backup schema version 3.
 - Full-sale void/return workflow with required reason, duplicate-void guard, stock restoration, reversal movement records, and credit-balance reversal safeguards.
 - Dedicated inventory actions for damaged goods, expired goods, and physical stock counts.
 - Sale lifecycle fields (`status`, `voided_at`, and `void_reason`) with a non-destructive database migration to version 3.
@@ -21,7 +25,8 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Changed
 
-- Native development version advanced to `0.6.0-native-dev` with version code 4.
+- Native development version advanced to `0.7.0-native-dev` with version code 5.
+- Estimated net profit now subtracts cost-valued damaged and expired inventory loss in addition to normal expenses.
 - Dashboard and analytics exclude voided sales and their COGS while keeping the original audit record.
 - Native restore replaces local operational data only after format/schema validation and explicit confirmation, inside one rollback-safe SQLite transaction.
 - Analytics 7/30/90/365-day windows now start at local midnight of the first included calendar day.

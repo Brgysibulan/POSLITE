@@ -52,5 +52,6 @@ jobs:
           test -f docs/CUSTOMIZATION.md
           test -f docs/BACKUP-RESTORE.md
           test -f docs/TRANSACTION-LIFECYCLE.md
+          test -f docs/CASH-CLOSING.md
           test -f docs/PATCH-NOTES.md
           test -f CHANGELOG.md

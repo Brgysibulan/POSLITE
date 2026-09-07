@@ -53,6 +53,14 @@ data class Customer(
     val balance: Double
 )
 
+data class CreditEntry(
+    val id: Long,
+    val type: String,
+    val amount: Double,
+    val createdAt: Long,
+    val reference: String
+)
+
 data class Expense(
     val id: Long,
     val createdAt: Long,
@@ -99,7 +107,31 @@ data class AnalyticsSummary(
     val grossProfit: Double,
     val expenses: Double,
     val estimatedNet: Double,
-    val purchaseSpend: Double
+    val purchaseSpend: Double,
+    val damagedLoss: Double,
+    val expiredLoss: Double
+)
+
+data class CashClosing(
+    val id: Long,
+    val periodStart: Long,
+    val closedAt: Long,
+    val openingCash: Double,
+    val cashSales: Double,
+    val creditPayments: Double,
+    val expenses: Double,
+    val expectedCash: Double,
+    val actualCash: Double,
+    val variance: Double,
+    val note: String
+)
+
+data class CashClosingPreview(
+    val periodStart: Long,
+    val cashSales: Double,
+    val creditPayments: Double,
+    val expenses: Double,
+    val expectedCash: Double
 )
 
 data class StoreSettings(
@@ -238,6 +270,7 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
                 amount REAL NOT NULL
             )""".trimIndent()
         )
+        createCashClosingsTable(db)
         db.execSQL(
             """CREATE TABLE settings(
                 key TEXT PRIMARY KEY,
@@ -257,6 +290,7 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
             db.execSQL("ALTER TABLE sales ADD COLUMN voided_at INTEGER")
             db.execSQL("ALTER TABLE sales ADD COLUMN void_reason TEXT NOT NULL DEFAULT ''")
         }
+        if (oldVersion < 4) createCashClosingsTable(db)
     }
 
     private fun createDraftCartTable(db: SQLiteDatabase) {
@@ -268,6 +302,24 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
                 PRIMARY KEY(product_id, unit_id),
                 FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE,
                 FOREIGN KEY(unit_id) REFERENCES product_units(id) ON DELETE CASCADE
+            )""".trimIndent()
+        )
+    }
+
+    private fun createCashClosingsTable(db: SQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS cash_closings(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                period_start INTEGER NOT NULL,
+                closed_at INTEGER NOT NULL,
+                opening_cash REAL NOT NULL,
+                cash_sales REAL NOT NULL,
+                credit_payments REAL NOT NULL,
+                expenses REAL NOT NULL,
+                expected_cash REAL NOT NULL,
+                actual_cash REAL NOT NULL,
+                variance REAL NOT NULL,
+                note TEXT NOT NULL DEFAULT ''
             )""".trimIndent()
         )
     }
@@ -709,6 +761,14 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
         })
     }
 
+    fun getCreditLedger(customerId: Long): List<CreditEntry> {
+        val rows = mutableListOf<CreditEntry>()
+        readableDatabase.rawQuery("SELECT id,entry_type,amount,created_at,reference FROM credit_ledger WHERE customer_id=? ORDER BY created_at DESC,id DESC", arrayOf(customerId.toString())).use { c ->
+            while (c.moveToNext()) rows += CreditEntry(c.getLong(0), c.getString(1), c.getDouble(2), c.getLong(3), c.getString(4))
+        }
+        return rows
+    }
+
     fun recordCreditPayment(customerId: Long, amount: Double) {
         require(amount > 0) { "Ang bayad ay dapat higit sa zero." }
         val db = writableDatabase
@@ -769,8 +829,57 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
         val cogs = queryDouble(db, "SELECT COALESCE(SUM(si.qty_base*si.cost_base),0) FROM sale_items si JOIN sales s ON s.id=si.sale_id WHERE s.status='completed' AND s.created_at>=?", arrayOf(fromMillis.toString()))
         val expenses = queryDouble(db, "SELECT COALESCE(SUM(amount),0) FROM expenses WHERE created_at>=?", arrayOf(fromMillis.toString()))
         val purchases = queryDouble(db, "SELECT COALESCE(SUM(total_cost),0) FROM purchases WHERE created_at>=?", arrayOf(fromMillis.toString()))
-        return AnalyticsSummary(sales, cogs, sales - cogs, expenses, sales - cogs - expenses, purchases)
+        val damaged = -queryDouble(db, "SELECT COALESCE(SUM(qty_base*cost_base),0) FROM stock_movements WHERE movement_type='damaged' AND created_at>=?", arrayOf(fromMillis.toString()))
+        val expired = -queryDouble(db, "SELECT COALESCE(SUM(qty_base*cost_base),0) FROM stock_movements WHERE movement_type='expired' AND created_at>=?", arrayOf(fromMillis.toString()))
+        return AnalyticsSummary(sales, cogs, sales - cogs, expenses, sales - cogs - expenses - damaged - expired, purchases, damaged, expired)
     }
+
+    fun previewCashClosing(openingCash: Double): CashClosingPreview {
+        require(openingCash >= 0 && openingCash.isFinite()) { "Hindi valid ang panimulang cash." }
+        val db = readableDatabase
+        val lastClosing = getRecentCashClosings(1).firstOrNull()
+        val periodStart = max(startOfToday(), lastClosing?.closedAt ?: 0L)
+        val cashSales = queryDouble(db, "SELECT COALESCE(SUM(total),0) FROM sales WHERE status='completed' AND payment_type='cash' AND created_at>=?", arrayOf(periodStart.toString()))
+        val creditPayments = queryDouble(db, "SELECT COALESCE(SUM(amount),0) FROM credit_ledger WHERE entry_type='payment' AND created_at>=?", arrayOf(periodStart.toString()))
+        val expenses = queryDouble(db, "SELECT COALESCE(SUM(amount),0) FROM expenses WHERE created_at>=?", arrayOf(periodStart.toString()))
+        return CashClosingPreview(periodStart, cashSales, creditPayments, expenses, openingCash + cashSales + creditPayments - expenses)
+    }
+
+    fun recordCashClosing(openingCash: Double, actualCash: Double, note: String): CashClosing {
+        require(actualCash >= 0 && actualCash.isFinite()) { "Hindi valid ang aktuwal na cash." }
+        val preview = previewCashClosing(openingCash)
+        val now = System.currentTimeMillis()
+        val variance = actualCash - preview.expectedCash
+        val id = writableDatabase.insertOrThrow("cash_closings", null, ContentValues().apply {
+            put("period_start", preview.periodStart)
+            put("closed_at", now)
+            put("opening_cash", openingCash)
+            put("cash_sales", preview.cashSales)
+            put("credit_payments", preview.creditPayments)
+            put("expenses", preview.expenses)
+            put("expected_cash", preview.expectedCash)
+            put("actual_cash", actualCash)
+            put("variance", variance)
+            put("note", note.trim())
+        })
+        return getCashClosing(id) ?: error("Hindi mabasa ang na-save na cash closing #$id.")
+    }
+
+    fun getRecentCashClosings(limit: Int = 14): List<CashClosing> {
+        val rows = mutableListOf<CashClosing>()
+        readableDatabase.rawQuery("SELECT id,period_start,closed_at,opening_cash,cash_sales,credit_payments,expenses,expected_cash,actual_cash,variance,note FROM cash_closings ORDER BY closed_at DESC LIMIT ?", arrayOf(limit.toString())).use { c ->
+            while (c.moveToNext()) rows += cashClosingRow(c)
+        }
+        return rows
+    }
+
+    private fun getCashClosing(id: Long): CashClosing? {
+        readableDatabase.rawQuery("SELECT id,period_start,closed_at,opening_cash,cash_sales,credit_payments,expenses,expected_cash,actual_cash,variance,note FROM cash_closings WHERE id=?", arrayOf(id.toString())).use { c ->
+            return if (c.moveToFirst()) cashClosingRow(c) else null
+        }
+    }
+
+    private fun cashClosingRow(c: android.database.Cursor) = CashClosing(c.getLong(0), c.getLong(1), c.getLong(2), c.getDouble(3), c.getDouble(4), c.getDouble(5), c.getDouble(6), c.getDouble(7), c.getDouble(8), c.getDouble(9), c.getString(10))
 
     fun getSettings(): StoreSettings = StoreSettings(
         storeName = getSetting("store_name").ifBlank { "POSlite Store" },
@@ -879,7 +988,7 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
         return JSONObject().apply {
             put("format", BACKUP_FORMAT)
             put("schemaVersion", BACKUP_SCHEMA)
-            put("appVersion", "0.6.0-native-dev")
+            put("appVersion", "0.7.0-native-dev")
             put("exportedAt", System.currentTimeMillis())
             put("tables", tables)
         }.toString(2)
@@ -906,7 +1015,7 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
         try {
             BACKUP_DELETE_ORDER.forEach { db.delete(it, null, null) }
             BACKUP_TABLES.forEach { (table, columns) ->
-                val rows = tables.getJSONArray(table)
+                val rows = tables.optJSONArray(table) ?: JSONArray()
                 for (index in 0 until rows.length()) {
                     val row = rows.getJSONObject(index)
                     val values = ContentValues()
@@ -935,17 +1044,20 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
     private fun parseBackup(text: String): JSONObject {
         val root = runCatching { JSONObject(text) }.getOrElse { error("Hindi mabasa ang .pos file.") }
         require(root.optString("format") == BACKUP_FORMAT) { "Hindi ito SariPOS Android backup." }
-        require(root.optInt("schemaVersion") in 1..BACKUP_SCHEMA) { "Hindi suportado ang backup version na ito." }
+        val schema = root.optInt("schemaVersion")
+        require(schema in 1..BACKUP_SCHEMA) { "Hindi suportado ang backup version na ito." }
         val tables = root.optJSONObject("tables") ?: error("Kulang ang backup data.")
-        BACKUP_TABLES.forEach { (table, _) -> require(tables.optJSONArray(table) != null) { "Kulang ang $table sa backup." } }
+        BACKUP_TABLES.forEach { (table, _) ->
+            if (table != "cash_closings" || schema >= 3) require(tables.optJSONArray(table) != null) { "Kulang ang $table sa backup." }
+        }
         return root
     }
 
     companion object {
         private const val DB_NAME = "poslite-native.db"
-        private const val DB_VERSION = 3
+        private const val DB_VERSION = 4
         private const val BACKUP_FORMAT = "SariPOS-Android"
-        private const val BACKUP_SCHEMA = 2
+        private const val BACKUP_SCHEMA = 3
 
         private val BACKUP_TABLES = linkedMapOf(
             "products" to arrayOf("id", "name", "category", "barcode", "base_unit", "stock_base", "low_stock_base", "avg_cost_base", "created_at", "updated_at"),
@@ -958,13 +1070,14 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
             "stock_movements" to arrayOf("id", "product_id", "movement_type", "qty_base", "created_at", "reference", "note", "cost_base"),
             "credit_ledger" to arrayOf("id", "customer_id", "entry_type", "amount", "created_at", "reference"),
             "expenses" to arrayOf("id", "created_at", "category", "description", "amount"),
+            "cash_closings" to arrayOf("id", "period_start", "closed_at", "opening_cash", "cash_sales", "credit_payments", "expenses", "expected_cash", "actual_cash", "variance", "note"),
             "settings" to arrayOf("key", "value"),
             "draft_cart" to arrayOf("product_id", "unit_id", "qty")
         )
 
         private val BACKUP_DELETE_ORDER = listOf(
             "draft_cart", "credit_ledger", "sale_items", "purchase_items", "stock_movements",
-            "sales", "purchases", "expenses", "product_units", "customers", "products", "settings"
+            "sales", "purchases", "expenses", "cash_closings", "product_units", "customers", "products", "settings"
         )
     }
 }

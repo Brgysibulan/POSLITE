@@ -1,6 +1,44 @@
 # SariPOS Patch Notes
 
-## Latest patch — Transaction Correction and Stock Loss Controls
+## Latest patch — Cash Closing, Credit Ledger, and Loss Analytics
+
+**Date:** 2026-09-07
+**Track:** `0.7.0-native-dev`
+**Status:** Source complete / GitHub Actions and real-device verification pending
+
+### Added
+
+- **Cash Closing** screen with user-entered opening cash and actual counted cash.
+- Expected-cash calculation from opening cash + completed cash sales + recorded credit payments − expenses.
+- Variance display, optional note, multiple shift closings, and recent closing history.
+- Closing periods begin at local midnight or the previous closing timestamp, whichever is later, so multiple shifts do not double-count activity.
+- Customer **Ledger** viewer showing credit sales, payments, void reversals, dates, and transaction references.
+- Analytics cards for cost-valued damaged and expired inventory loss.
+- `cash_closings` table via database migration version 4.
+- Native backup schema version 3 including cash closings, with backward restore support for native schema 1 and 2.
+
+### Changed
+
+- Native build advanced to `0.7.0-native-dev` / version code 5.
+- **Natirang Tubo** now subtracts damaged and expired inventory loss at the stored movement cost, in addition to normal expenses.
+
+### Cash boundary
+
+- Purchase spending is shown in Analytics but is not subtracted from expected drawer cash because native Kumprada does not yet store whether payment came from the drawer, bank, supplier credit, or another source.
+- Cash closing records are immutable snapshots. Later corrections appear in the next closing period instead of silently rewriting a signed-off count.
+
+### Verification checklist
+
+- GitHub Actions Android build: pending.
+- Run two closings in one day and confirm the second period starts at the first closing time.
+- Compare cash sales, credit payments, expenses, expected cash, actual cash, and variance against manual totals.
+- Verify customer ledgers after credit sale, payment, and void reversal.
+- Verify damaged/expired costs reduce Natirang Tubo exactly once.
+- Restore native backup schemas 1, 2, and 3.
+
+---
+
+## Previous patch — Transaction Correction and Stock Loss Controls
 
 **Date:** 2026-09-07
 **Track:** `0.6.0-native-dev`

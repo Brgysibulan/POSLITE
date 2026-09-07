@@ -7,7 +7,7 @@
 **Repository:** `Brgysibulan/POSLITE` (kept for compatibility; not renamed yet)  
 **Current phase:** Native Android development + Android-first web workflow validation  
 **Web reference version:** v0.2.0 plus documented development modules  
-**Native Android development version:** v0.6.0-native-dev
+**Native Android development version:** v0.7.0-native-dev
 **Primary platform:** Android smartphone  
 **First verified native APK baseline:** `9f4acb298eb71cb13da5dcb863c1749acca50507` — build #8 SUCCESS  
 **Verified native JPG-receipt hotfix baseline:** `8b0ea16b79a073aeed1b43bfdaf9fd335e08e631` — build #12 SUCCESS  
@@ -117,6 +117,7 @@ Tables:
 10. `expenses`
 11. `settings`
 12. `draft_cart`
+13. `cash_closings`
 
 The native Android operational database is independent from browser IndexedDB during development/testing.
 
@@ -124,7 +125,7 @@ The native Android operational database is independent from browser IndexedDB du
 
 The `0.5.0-native-dev` track adds an Android-owned full-database backup and restore workflow in **Ayos ng App**. Export uses the Android system document picker, so the store owner chooses where the `.pos` file is saved without storage permission workarounds. Import validates the format and schema and shows record counts before the user confirms replacement.
 
-Restore deletes and reinserts the supported native tables inside one SQLite transaction. Any invalid row or insertion failure rolls the entire operation back. The format is `SariPOS-Android`; current schema version 2 includes products, units, customers, sales/items and lifecycle fields, purchases/items, stock movements, credit ledger, expenses, settings, and the draft cart. Schema-1 native backups remain accepted.
+Restore deletes and reinserts the supported native tables inside one SQLite transaction. Any invalid row or insertion failure rolls the entire operation back. The format is `SariPOS-Android`; current schema version 3 includes products, units, customers, sales/items and lifecycle fields, purchases/items, stock movements, credit ledger, expenses, cash closings, settings, and the draft cart. Native schema-1 and schema-2 backups remain accepted.
 
 Database version 2 introduces `draft_cart`. Existing version-1 native installs receive a non-destructive `CREATE TABLE IF NOT EXISTS` migration. Cart updates are saved locally after add/remove/quantity changes, restored on app startup, and cleared in the same database transaction as a successful checkout.
 
@@ -137,6 +138,14 @@ Database version 3 adds sale lifecycle fields without deleting or recreating exi
 Credit-sale void also reverses the customer's outstanding balance and writes a negative `sale_void` ledger entry. Because the current credit ledger does not allocate payments to individual invoices, the app conservatively blocks a credit void if any customer payment occurred after the sale. This prevents silent balance corruption until invoice-level allocation exists.
 
 Inventory adjustment now distinguishes normal add/remove, damaged goods, expired goods, and physical counts. These use movement types `adjustment`, `damaged`, `expired`, and `stock_count`, keeping loss reasons visible in the database audit trail. See `docs/TRANSACTION-LIFECYCLE.md`.
+
+## Native cash closing, credit ledger, and loss analytics — 2026-09-07
+
+Database version 4 adds immutable `cash_closings` snapshots. Each closing stores its period start and close time, opening cash, completed cash sales, credit payments, expenses, expected cash, actual counted cash, variance, and note. A new period starts at local midnight or the last closing time, whichever is later, allowing multiple shifts without double-counting.
+
+Expected cash intentionally excludes purchase spending because the current purchase record does not say whether a supplier was paid from the drawer, bank, credit, or another source. That payment-source field must exist before Kumprada can safely change drawer cash.
+
+The Utang screen now exposes each customer's chronological ledger. Analytics separately values damaged and expired deductions using movement quantity × saved movement cost, and **Natirang Tubo** subtracts both loss categories. Native backup schema 3 adds cash closings while remaining able to restore native schema 1/2. See `docs/CASH-CLOSING.md`.
 
 ## Web/PWA reference architecture
 
@@ -385,7 +394,7 @@ Native Android should use the same config concepts/schema when the customization
 - `.pos` = business/operational data backup
 - `.posconfig` = reusable appearance and wording only
 
-Native Android now has its own `SariPOS-Android` schema-2 `.pos` export/restore with backward support for native schema 1. Conversion compatibility with the separate web `POSlite` schema-2 backup remains planned.
+Native Android now has its own `SariPOS-Android` schema-3 `.pos` export/restore with backward support for native schemas 1 and 2. Conversion compatibility with the separate web `POSlite` schema-2 backup remains planned.
 
 ## Development/mock GitHub data
 
