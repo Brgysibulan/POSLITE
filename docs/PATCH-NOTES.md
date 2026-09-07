@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-07
 **Track:** `0.6.0-native-dev`
-**Status:** Source complete / GitHub Actions and real-device verification pending
+**Status:** GitHub Actions build successful / real-device verification pending
 
 ### Added
 
@@ -32,7 +32,11 @@
 
 ### Verification checklist
 
-- GitHub Actions Android build: pending.
+- GitHub Actions `Build SariPOS Native Android` run #22 passed at commit `69df5615b2f7eebaa68efbd7c8b724464129d8e9`.
+- Run ID: `34119598557`.
+- Artifact: `SariPOS-native-debug` (`10017672875`).
+- Artifact ZIP digest: `sha256:c8966c2417fb23f7663313ab8e9b7242d445e28f0079d439926dfb81393c2bdc`.
+- Web/document validation run #115 passed.
 - Void cash and credit sales and verify stock, movements, balances, receipt status, dashboard, and analytics.
 - Confirm second void attempts are rejected.
 - Confirm credit void is rejected after a later customer payment.

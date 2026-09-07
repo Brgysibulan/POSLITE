@@ -11,7 +11,7 @@ POSlite now has a native Android implementation under `android-native/`. The exi
 
 A newer Android receipt fix is being validated after a real-device report that the old PDF/print action could close the app.
 
-Current development track: **`0.6.0-native-dev` / version code 4**. This track adds auditable full-sale void/return and dedicated stock-loss/count controls. The preceding data-safety track passed GitHub Actions native build #21 at commit `4e5ea36b849b954155c08646b55d789667470804`; the new transaction-lifecycle build is pending verification.
+Current development track: **`0.6.0-native-dev` / version code 4**. This track adds auditable full-sale void/return and dedicated stock-loss/count controls. GitHub Actions native build #22 passed at commit `69df5615b2f7eebaa68efbd7c8b724464129d8e9`; real-device verification is next.
 
 ## Transaction lifecycle foundation — 2026-09-07
 

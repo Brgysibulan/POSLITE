@@ -2,7 +2,7 @@
 
 ## Full-sale void / return
 
-Implemented in the `0.6.0-native-dev` source track. Open **Resibo / Talaan**, find a completed receipt, and choose **Void / Return**. The user must enter a reason and confirm the reversal.
+Implemented in the `0.6.0-native-dev` source track and compiled successfully in GitHub Actions native build #22 at commit `69df5615b2f7eebaa68efbd7c8b724464129d8e9`. Open **Resibo / Talaan**, find a completed receipt, and choose **Void / Return**. The user must enter a reason and confirm the reversal.
 
 The reversal runs in one SQLite transaction:
 
