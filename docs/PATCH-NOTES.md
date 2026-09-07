@@ -1,6 +1,40 @@
 # SariPOS Patch Notes
 
-## Latest patch — Cash Closing, Credit Ledger, and Loss Analytics
+## Latest patch — Editable Android Terms and S Logo
+
+**Date:** 2026-09-07
+**Track:** `0.8.0-native-dev`
+**Status:** Source complete / GitHub Actions and real-device verification pending
+
+### Added
+
+- **Editable Button & Translation Terms** inside **Ayos ng App**.
+- Fourteen individually editable labels: Home, Sell/Benta, Products/Paninda, More/Iba Pa, Purchases/Kumprada, Inventory/Stock, Credit/Utang, Expenses/Gastos, Analytics/Kita, Cash Closing, Receipts/Reports, Settings, Back, and New Sale.
+- One-tap **Sari-sari Terms** and **English Terms** presets.
+- Immediate UI refresh after saving terminology.
+- Android launcher and round adaptive icons using a bold white **S** on a solid black background.
+- Matching black-and-white S badge in the native Home header.
+
+### Storage and compatibility
+
+- Custom terms are stored as `term_*` keys in the existing SQLite `settings` table.
+- No database migration or package-name change is needed.
+- Existing installations without custom values continue using the current sari-sari defaults.
+- Terms are automatically included in native `.pos` backup/restore because the settings table is already part of the backup contract.
+- Store transactions, unit conversions, weighted-average cost, COGS, stock, credit, and receipts are unaffected.
+
+### Verification checklist
+
+- GitHub Actions Android build: pending.
+- Install over v0.7.0 and confirm current operational data remains intact.
+- Switch to English, save, and verify bottom navigation, More menu, screen headings, Back, New Sale, and Purchase shortcut.
+- Edit each label manually, force-stop/reopen, and verify persistence.
+- Export and restore a native backup containing custom terms.
+- Confirm the white-S/black-background launcher icon on square and circular Android launchers.
+
+---
+
+## Previous patch — Cash Closing, Credit Ledger, and Loss Analytics
 
 **Date:** 2026-09-07
 **Track:** `0.7.0-native-dev`

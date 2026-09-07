@@ -1,5 +1,16 @@
 # POSlite Appearance and Custom Terms
 
+## Native Android terminology — v0.8.0-native-dev
+
+Native Android **Ayos ng App** now includes **Editable Button & Translation Terms**. The owner can edit fourteen principal labels individually or load one of two presets:
+
+- **Sari-sari Terms** — Benta, Paninda, Iba Pa, Kumprada / Stock In, Stock ng Paninda, Utang, Gastos, Kita at Tubo, Resibo / Talaan, and related actions.
+- **English Terms** — Sell, Products, More, Purchases / Stock In, Inventory, Credit, Expenses, Analytics & Profit, Receipts / Reports, and related actions.
+
+The editable labels currently drive bottom navigation, the More menu, principal screen titles, Back, New Sale, and the Home purchase shortcut. Custom values are trimmed, cannot be blank, save atomically, refresh immediately, persist offline, and are included in full native `.pos` backup/restore through the existing settings table.
+
+Native terminology is presentation-only. It does not alter SQLite table/column names, transaction types, stock units, weighted-average cost, COGS, credit rules, or package identifiers.
+
 ## Purpose
 
 POSlite can use store-friendly wording instead of forcing accounting or technical labels. The same Settings panel also controls the app appearance.

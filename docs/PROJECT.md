@@ -7,7 +7,7 @@
 **Repository:** `Brgysibulan/POSLITE` (kept for compatibility; not renamed yet)  
 **Current phase:** Native Android development + Android-first web workflow validation  
 **Web reference version:** v0.2.0 plus documented development modules  
-**Native Android development version:** v0.7.0-native-dev
+**Native Android development version:** v0.8.0-native-dev
 **Primary platform:** Android smartphone  
 **First verified native APK baseline:** `9f4acb298eb71cb13da5dcb863c1749acca50507` — build #8 SUCCESS  
 **Verified native JPG-receipt hotfix baseline:** `8b0ea16b79a073aeed1b43bfdaf9fd335e08e631` — build #12 SUCCESS  
@@ -147,6 +147,14 @@ Database version 4 adds immutable `cash_closings` snapshots. Each closing stores
 Expected cash intentionally excludes purchase spending because the current purchase record does not say whether a supplier was paid from the drawer, bank, credit, or another source. That payment-source field must exist before Kumprada can safely change drawer cash.
 
 The Utang screen now exposes each customer's chronological ledger. Analytics separately values damaged and expired deductions using movement quantity × saved movement cost, and **Natirang Tubo** subtracts both loss categories. Native backup schema 3 adds cash closings while remaining able to restore native schema 1/2. See `docs/CASH-CLOSING.md`.
+
+## Native editable terminology and S logo — 2026-09-07
+
+The `0.8.0-native-dev` track ports the core terminology customization workflow into the native Android app. Fourteen navigation/menu/action labels can be edited individually or replaced with the Sari-sari or English preset. Saved terms update the bottom navigation, More menu, principal screen titles, Back action, New Sale button, and Home purchase shortcut.
+
+Terms are presentation-only `term_*` values in the existing settings table. They do not rename database tables, internal transaction types, package IDs, or accounting concepts. Because native backup already includes settings, custom terms travel with a full `.pos` backup without a schema change.
+
+Android launcher branding now uses a white **S** on a black background for both normal and round adaptive icons. Home shows the same black-and-white badge beside the SariPOS name. See `docs/CUSTOMIZATION.md`.
 
 ## Web/PWA reference architecture
 

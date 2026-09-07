@@ -140,6 +140,42 @@ data class StoreSettings(
     val address: String = ""
 )
 
+data class UiTerms(
+    val home: String = "Home",
+    val sell: String = "Benta",
+    val products: String = "Paninda",
+    val more: String = "Iba Pa",
+    val purchases: String = "Kumprada / Stock In",
+    val inventory: String = "Stock ng Paninda",
+    val credit: String = "Utang",
+    val expenses: String = "Gastos",
+    val analytics: String = "Kita at Tubo",
+    val cashClosing: String = "Cash Closing",
+    val reports: String = "Resibo / Talaan",
+    val settings: String = "Ayos ng App",
+    val back: String = "Balik",
+    val newSale: String = "Bagong Benta"
+) {
+    companion object {
+        fun english() = UiTerms(
+            home = "Home",
+            sell = "Sell",
+            products = "Products",
+            more = "More",
+            purchases = "Purchases / Stock In",
+            inventory = "Inventory",
+            credit = "Credit",
+            expenses = "Expenses",
+            analytics = "Analytics & Profit",
+            cashClosing = "Cash Closing",
+            reports = "Receipts / Reports",
+            settings = "Settings",
+            back = "Back",
+            newSale = "New Sale"
+        )
+    }
+}
+
 data class BackupPreview(
     val products: Int,
     val sales: Int,
@@ -900,6 +936,55 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
         }
     }
 
+    fun getUiTerms(): UiTerms {
+        val defaults = UiTerms()
+        fun term(key: String, fallback: String) = getSetting("term_$key").trim().ifBlank { fallback }
+        return UiTerms(
+            home = term("home", defaults.home),
+            sell = term("sell", defaults.sell),
+            products = term("products", defaults.products),
+            more = term("more", defaults.more),
+            purchases = term("purchases", defaults.purchases),
+            inventory = term("inventory", defaults.inventory),
+            credit = term("credit", defaults.credit),
+            expenses = term("expenses", defaults.expenses),
+            analytics = term("analytics", defaults.analytics),
+            cashClosing = term("cash_closing", defaults.cashClosing),
+            reports = term("reports", defaults.reports),
+            settings = term("settings", defaults.settings),
+            back = term("back", defaults.back),
+            newSale = term("new_sale", defaults.newSale)
+        )
+    }
+
+    fun saveUiTerms(terms: UiTerms) {
+        val values = linkedMapOf(
+            "home" to terms.home,
+            "sell" to terms.sell,
+            "products" to terms.products,
+            "more" to terms.more,
+            "purchases" to terms.purchases,
+            "inventory" to terms.inventory,
+            "credit" to terms.credit,
+            "expenses" to terms.expenses,
+            "analytics" to terms.analytics,
+            "cash_closing" to terms.cashClosing,
+            "reports" to terms.reports,
+            "settings" to terms.settings,
+            "back" to terms.back,
+            "new_sale" to terms.newSale
+        )
+        require(values.values.all { it.isNotBlank() }) { "Hindi puwedeng blank ang translation term." }
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            values.forEach { (key, value) -> putSetting(db, "term_$key", value.trim()) }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     private fun getSetting(key: String): String {
         readableDatabase.rawQuery("SELECT value FROM settings WHERE key=?", arrayOf(key)).use { c ->
             return if (c.moveToFirst()) c.getString(0) else ""
@@ -988,7 +1073,7 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
         return JSONObject().apply {
             put("format", BACKUP_FORMAT)
             put("schemaVersion", BACKUP_SCHEMA)
-            put("appVersion", "0.7.0-native-dev")
+            put("appVersion", "0.8.0-native-dev")
             put("exportedAt", System.currentTimeMillis())
             put("tables", tables)
         }.toString(2)

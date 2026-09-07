@@ -11,7 +11,17 @@ POSlite now has a native Android implementation under `android-native/`. The exi
 
 A newer Android receipt fix is being validated after a real-device report that the old PDF/print action could close the app.
 
-Current development track: **`0.7.0-native-dev` / version code 5**. This track adds shift-aware cash closing, customer credit-ledger viewing, and cost-valued damaged/expired Analytics. GitHub Actions native build #23 passed at commit `c62c7bf3a7bbe454e2a0b9010dd720f0495d4b3c`; real-device verification is next.
+Current development track: **`0.8.0-native-dev` / version code 6**. This track adds editable native button/navigation terms and a white-S/black-background Android logo. The preceding operational-controls track passed GitHub Actions native build #23 at commit `c62c7bf3a7bbe454e2a0b9010dd720f0495d4b3c`; the customization build is pending verification.
+
+## Editable terminology and launcher branding — 2026-09-07
+
+- Fourteen editable main navigation, menu, title, and action labels.
+- Sari-sari and English one-tap presets.
+- Immediate refresh and offline persistence in SQLite settings.
+- Automatic inclusion in native full backup/restore.
+- White **S** on black Android adaptive launcher/round icon.
+- Matching Home header badge.
+- No operational database migration; accounting/internal identifiers remain stable.
 
 ## Operational controls — 2026-09-07
 

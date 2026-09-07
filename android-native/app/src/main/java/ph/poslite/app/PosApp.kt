@@ -39,14 +39,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -66,6 +69,7 @@ import ph.poslite.app.data.PurchaseLineInput
 import ph.poslite.app.data.SaleReceipt
 import ph.poslite.app.data.StoreSettings
 import ph.poslite.app.data.UnitOption
+import ph.poslite.app.data.UiTerms
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -73,6 +77,7 @@ import java.util.Locale
 import kotlin.math.max
 
 private enum class Screen { HOME, SELL, PRODUCTS, MORE, PURCHASES, INVENTORY, CREDIT, EXPENSES, ANALYTICS, CASH_CLOSING, REPORTS, SETTINGS }
+private val LocalUiTerms = staticCompositionLocalOf { UiTerms() }
 
 private fun money(value: Double): String = NumberFormat.getCurrencyInstance(Locale("en", "PH")).format(value)
 private fun fmtDate(value: Long): String = SimpleDateFormat("MMM d, yyyy h:mm a", Locale("en", "PH")).format(Date(value))
@@ -111,6 +116,8 @@ private class PosController(context: Context) {
         private set
     var settings by mutableStateOf(StoreSettings())
         private set
+    var terms by mutableStateOf(UiTerms())
+        private set
     var dataVersion by mutableIntStateOf(0)
         private set
     val cart = mutableStateListOf<CartLine>()
@@ -128,6 +135,7 @@ private class PosController(context: Context) {
         receipts = store.getRecentReceipts()
         stats = store.getDashboardStats()
         settings = store.getSettings()
+        terms = store.getUiTerms()
         dataVersion++
     }
 
@@ -184,13 +192,15 @@ fun PosApp() {
     var screen by remember { mutableStateOf(Screen.HOME) }
     val moreSelected = screen !in listOf(Screen.HOME, Screen.SELL, Screen.PRODUCTS)
 
-    Scaffold(
+    CompositionLocalProvider(LocalUiTerms provides controller.terms) {
+        val terms = LocalUiTerms.current
+        Scaffold(
         bottomBar = {
             NavigationBar {
-                NavigationBarItem(selected = screen == Screen.HOME, onClick = { screen = Screen.HOME }, icon = { Text("⌂") }, label = { Text("Home") })
-                NavigationBarItem(selected = screen == Screen.SELL, onClick = { screen = Screen.SELL }, icon = { Text("＋") }, label = { Text("Benta") })
-                NavigationBarItem(selected = screen == Screen.PRODUCTS, onClick = { screen = Screen.PRODUCTS }, icon = { Text("▦") }, label = { Text("Paninda") })
-                NavigationBarItem(selected = moreSelected || screen == Screen.MORE, onClick = { screen = Screen.MORE }, icon = { Text("☰") }, label = { Text("Iba Pa") })
+                NavigationBarItem(selected = screen == Screen.HOME, onClick = { screen = Screen.HOME }, icon = { Text("⌂") }, label = { Text(terms.home) })
+                NavigationBarItem(selected = screen == Screen.SELL, onClick = { screen = Screen.SELL }, icon = { Text("＋") }, label = { Text(terms.sell) })
+                NavigationBarItem(selected = screen == Screen.PRODUCTS, onClick = { screen = Screen.PRODUCTS }, icon = { Text("▦") }, label = { Text(terms.products) })
+                NavigationBarItem(selected = moreSelected || screen == Screen.MORE, onClick = { screen = Screen.MORE }, icon = { Text("☰") }, label = { Text(terms.more) })
             }
         }
     ) { padding ->
@@ -212,16 +222,18 @@ fun PosApp() {
         }
     }
 
-    controller.activeReceipt?.let { receipt ->
-        ReceiptDialog(receipt, controller.settings, onDismiss = { controller.activeReceipt = null })
+        controller.activeReceipt?.let { receipt ->
+            ReceiptDialog(receipt, controller.settings, onDismiss = { controller.activeReceipt = null })
+        }
     }
 }
 
 @Composable
 private fun Header(title: String, subtitle: String = "", onBack: (() -> Unit)? = null) {
+    val terms = LocalUiTerms.current
     Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
         if (onBack != null) {
-            TextButton(onClick = onBack) { Text("‹ Balik") }
+            TextButton(onClick = onBack) { Text("‹ ${terms.back}") }
             Spacer(Modifier.width(4.dp))
         }
         Column {
@@ -243,8 +255,21 @@ private fun Stat(label: String, value: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun HomeScreen(c: PosController, onSell: () -> Unit, onPurchases: () -> Unit) {
+    val terms = LocalUiTerms.current
     LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)) {
-        item { Header("SariPOS", "Para sa sari-sari store · offline sa phone") }
+        item {
+            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Card(colors = CardDefaults.cardColors(containerColor = Color.Black)) {
+                    Box(Modifier.width(48.dp).height(48.dp), contentAlignment = Alignment.Center) {
+                        Text("S", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
+                    }
+                }
+                Column(Modifier.padding(start = 12.dp)) {
+                    Text("SariPOS", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text("Para sa sari-sari store · offline sa phone", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
         item {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Stat("Halin Ngayon", money(c.stats.salesToday), Modifier.weight(1f))
@@ -260,8 +285,8 @@ private fun HomeScreen(c: PosController, onSell: () -> Unit, onPurchases: () -> 
         }
         item {
             Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onSell, modifier = Modifier.weight(1f)) { Text("Bagong Benta") }
-                OutlinedButton(onClick = onPurchases, modifier = Modifier.weight(1f)) { Text("Kumprada") }
+                Button(onClick = onSell, modifier = Modifier.weight(1f)) { Text(terms.newSale) }
+                OutlinedButton(onClick = onPurchases, modifier = Modifier.weight(1f)) { Text(terms.purchases) }
             }
         }
         item {
@@ -278,6 +303,7 @@ private fun HomeScreen(c: PosController, onSell: () -> Unit, onPurchases: () -> 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun SellScreen(c: PosController) {
+    val terms = LocalUiTerms.current
     val context = LocalContext.current
     val scanner = remember { GmsBarcodeScanning.getClient(context) }
     var search by remember { mutableStateOf("") }
@@ -294,7 +320,7 @@ private fun SellScreen(c: PosController) {
     val total = max(0.0, subtotal - num(discount).coerceIn(0.0, subtotal))
 
     Column(Modifier.fillMaxSize()) {
-        Header("Benta", "Scan barcode/QR o hanapin ang paninda")
+        Header(terms.sell, "Scan barcode/QR o hanapin ang ${terms.products.lowercase()}")
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(search, { search = it }, label = { Text("Hanap / barcode") }, modifier = Modifier.weight(1f), singleLine = true)
             Button(onClick = {
@@ -490,12 +516,13 @@ private data class DraftUnit(val label: String, val qtyBase: String, val sellPri
 
 @Composable
 private fun ProductsScreen(c: PosController) {
+    val terms = LocalUiTerms.current
     val context = LocalContext.current
     var editing by remember { mutableStateOf<Product?>(null) }
     var addNew by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f)) { Header("Paninda", "Piece, pack, kilo at walang-barcode na paninda") }
+            Box(Modifier.weight(1f)) { Header(terms.products, "Piece, pack, kilo at walang-barcode na paninda") }
             Button(onClick = { addNew = true }, modifier = Modifier.padding(end = 16.dp)) { Text("Add Paninda") }
         }
         LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -624,17 +651,18 @@ private fun ProductEditor(c: PosController, product: Product?, onDismiss: () -> 
 
 @Composable
 private fun MoreScreen(open: (Screen) -> Unit) {
+    val terms = LocalUiTerms.current
     LazyColumn(Modifier.fillMaxSize()) {
-        item { Header("Iba Pa", "Mga gamit ng SariPOS") }
+        item { Header(terms.more, "Mga gamit ng SariPOS") }
         items(listOf(
-            Screen.PURCHASES to "Kumprada / Stock In",
-            Screen.INVENTORY to "Stock ng Paninda",
-            Screen.CREDIT to "Utang",
-            Screen.EXPENSES to "Gastos",
-            Screen.ANALYTICS to "Kita at Tubo",
-            Screen.CASH_CLOSING to "Cash Closing",
-            Screen.REPORTS to "Resibo / Talaan",
-            Screen.SETTINGS to "Ayos ng App"
+            Screen.PURCHASES to terms.purchases,
+            Screen.INVENTORY to terms.inventory,
+            Screen.CREDIT to terms.credit,
+            Screen.EXPENSES to terms.expenses,
+            Screen.ANALYTICS to terms.analytics,
+            Screen.CASH_CLOSING to terms.cashClosing,
+            Screen.REPORTS to terms.reports,
+            Screen.SETTINGS to terms.settings
         )) { (screen, label) ->
             Button(onClick = { open(screen) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 5.dp)) { Text(label) }
         }
@@ -645,6 +673,7 @@ private data class PurchaseDraft(val product: Product, val unit: UnitOption, val
 
 @Composable
 private fun PurchaseScreen(c: PosController, back: () -> Unit) {
+    val terms = LocalUiTerms.current
     val context = LocalContext.current
     var supplier by remember { mutableStateOf("") }
     var selectedProduct by remember(c.products) { mutableStateOf(c.products.firstOrNull()) }
@@ -653,7 +682,7 @@ private fun PurchaseScreen(c: PosController, back: () -> Unit) {
     var cost by remember { mutableStateOf("0") }
     var draft by remember { mutableStateOf(emptyList<PurchaseDraft>()) }
     Column(Modifier.fillMaxSize()) {
-        Header("Kumprada / Stock In", "I-record ang biniling paninda at puhunan", back)
+        Header(terms.purchases, "I-record ang biniling paninda at puhunan", back)
         Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
             OutlinedTextField(supplier, { supplier = it }, label = { Text("Pinagbilhan / Supplier (optional)") }, modifier = Modifier.fillMaxWidth())
             PickerButton("Paninda", selectedProduct?.name ?: "Piliin ang paninda", c.products.map { it.name }) { index -> selectedProduct = c.products[index]; selectedUnit = selectedProduct?.units?.firstOrNull { it.purchaseEnabled } }
@@ -705,9 +734,10 @@ private fun PickerButton(label: String, value: String, options: List<String>, se
 
 @Composable
 private fun InventoryScreen(c: PosController, back: () -> Unit) {
+    val terms = LocalUiTerms.current
     var adjusting by remember { mutableStateOf<Product?>(null) }
     Column(Modifier.fillMaxSize()) {
-        Header("Stock ng Paninda", "Tingnan at ayusin ang natitirang stock", back)
+        Header(terms.inventory, "Tingnan at ayusin ang natitirang stock", back)
         LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             items(c.products, key = { it.id }) { p ->
                 Card(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
@@ -752,12 +782,13 @@ private fun AdjustmentDialog(c: PosController, product: Product, dismiss: () -> 
 
 @Composable
 private fun CreditScreen(c: PosController, back: () -> Unit) {
+    val terms = LocalUiTerms.current
     var addCustomer by remember { mutableStateOf(false) }
     var paymentCustomer by remember { mutableStateOf<Customer?>(null) }
     var ledgerCustomer by remember { mutableStateOf<Customer?>(null) }
     Column(Modifier.fillMaxSize()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f)) { Header("Utang", "Balanse at bayad ng customer", back) }
+            Box(Modifier.weight(1f)) { Header(terms.credit, "Balanse at bayad ng customer", back) }
             Button(onClick = { addCustomer = true }, modifier = Modifier.padding(end = 16.dp)) { Text("Add") }
         }
         LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -839,11 +870,12 @@ private fun CustomerPaymentDialog(c: PosController, customer: Customer, dismiss:
 
 @Composable
 private fun ExpensesScreen(c: PosController, back: () -> Unit) {
+    val terms = LocalUiTerms.current
     var add by remember { mutableStateOf(false) }
     val expenses = remember(c.dataVersion) { c.store.getExpenses() }
     Column(Modifier.fillMaxSize()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f)) { Header("Gastos", "Mga gastos sa pagpapatakbo ng tindahan", back) }
+            Box(Modifier.weight(1f)) { Header(terms.expenses, "Mga gastos sa pagpapatakbo ng tindahan", back) }
             Button(onClick = { add = true }, modifier = Modifier.padding(end = 16.dp)) { Text("Add") }
         }
         LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -864,10 +896,11 @@ private fun ExpenseDialog(c: PosController, dismiss: () -> Unit) {
 
 @Composable
 private fun AnalyticsScreen(c: PosController, back: () -> Unit) {
+    val terms = LocalUiTerms.current
     var days by remember { mutableIntStateOf(30) }
     val summary = remember(c.dataVersion, days) { c.analytics(days) }
     LazyColumn(Modifier.fillMaxSize()) {
-        item { Header("Kita at Tubo", "Halin, puhunan, gastos at natirang tubo", back) }
+        item { Header(terms.analytics, "Halin, puhunan, gastos at natirang tubo", back) }
         item {
             Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(7, 30, 90, 365).forEach { d -> if (days == d) Button(onClick = {}) { Text("${d}d") } else OutlinedButton(onClick = { days = d }) { Text("${d}d") } }
@@ -893,6 +926,7 @@ private fun AnalyticsCards(a: AnalyticsSummary) {
 
 @Composable
 private fun CashClosingScreen(c: PosController, back: () -> Unit) {
+    val terms = LocalUiTerms.current
     val context = LocalContext.current
     var opening by remember { mutableStateOf("0") }
     var actual by remember { mutableStateOf("") }
@@ -901,7 +935,7 @@ private fun CashClosingScreen(c: PosController, back: () -> Unit) {
     val preview = remember(c.dataVersion, openingValue) { c.store.previewCashClosing(openingValue) }
     val history = remember(c.dataVersion) { c.store.getRecentCashClosings() }
     Column(Modifier.fillMaxSize()) {
-        Header("Cash Closing", "Ihambing ang expected at aktuwal na cash", back)
+        Header(terms.cashClosing, "Ihambing ang expected at aktuwal na cash", back)
         LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             item {
                 Card(Modifier.fillMaxWidth()) {
@@ -948,9 +982,10 @@ private fun CashClosingScreen(c: PosController, back: () -> Unit) {
 
 @Composable
 private fun ReportsScreen(c: PosController, back: () -> Unit) {
+    val terms = LocalUiTerms.current
     var voiding by remember { mutableStateOf<SaleReceipt?>(null) }
     Column(Modifier.fillMaxSize()) {
-        Header("Resibo / Talaan", "Mga recent na resibo ng benta", back)
+        Header(terms.reports, "Mga recent na resibo ng benta", back)
         LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             items(c.receipts, key = { it.id }) { r ->
                 Card(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
@@ -1010,9 +1045,11 @@ private fun VoidSaleDialog(c: PosController, receipt: SaleReceipt, dismiss: () -
 @Composable
 private fun SettingsScreen(c: PosController, back: () -> Unit) {
     val context = LocalContext.current
+    val terms = LocalUiTerms.current
     var storeName by remember(c.settings) { mutableStateOf(c.settings.storeName) }
     var owner by remember(c.settings) { mutableStateOf(c.settings.owner) }
     var address by remember(c.settings) { mutableStateOf(c.settings.address) }
+    var termDraft by remember(c.terms) { mutableStateOf(c.terms) }
     var pendingBackupText by remember { mutableStateOf<String?>(null) }
     var pendingBackupPreview by remember { mutableStateOf<BackupPreview?>(null) }
     val exportBackup = rememberLauncherForActivityResult(
@@ -1046,13 +1083,48 @@ private fun SettingsScreen(c: PosController, back: () -> Unit) {
         }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Header("Ayos ng App", "Tindahan at impormasyon ng SariPOS", back)
+        Header(terms.settings, "Tindahan at impormasyon ng SariPOS", back)
         Column(Modifier.padding(16.dp)) {
             OutlinedTextField(storeName, { storeName = it }, label = { Text("Pangalan ng tindahan") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(owner, { owner = it }, label = { Text("May-ari") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(address, { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
             Button(onClick = { c.store.saveSettings(StoreSettings(storeName, owner, address)); c.refresh(); Toast.makeText(context, "Naka-save ang settings.", Toast.LENGTH_SHORT).show() }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("I-save") }
             Text("Ang operational data ay naka-save locally sa Android phone.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 12.dp))
+
+            Card(Modifier.fillMaxWidth().padding(top = 18.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Editable Button & Translation Terms", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("Palitan ang tawag na makikita sa pangunahing navigation, menu buttons, at screen titles.")
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { termDraft = UiTerms() }, modifier = Modifier.weight(1f)) { Text("Sari-sari Terms") }
+                        OutlinedButton(onClick = { termDraft = UiTerms.english() }, modifier = Modifier.weight(1f)) { Text("English Terms") }
+                    }
+                    TermField("Home", termDraft.home) { termDraft = termDraft.copy(home = it) }
+                    TermField("Sell / Benta", termDraft.sell) { termDraft = termDraft.copy(sell = it) }
+                    TermField("Products / Paninda", termDraft.products) { termDraft = termDraft.copy(products = it) }
+                    TermField("More / Iba Pa", termDraft.more) { termDraft = termDraft.copy(more = it) }
+                    TermField("Purchases / Kumprada", termDraft.purchases) { termDraft = termDraft.copy(purchases = it) }
+                    TermField("Inventory / Stock", termDraft.inventory) { termDraft = termDraft.copy(inventory = it) }
+                    TermField("Credit / Utang", termDraft.credit) { termDraft = termDraft.copy(credit = it) }
+                    TermField("Expenses / Gastos", termDraft.expenses) { termDraft = termDraft.copy(expenses = it) }
+                    TermField("Analytics / Kita", termDraft.analytics) { termDraft = termDraft.copy(analytics = it) }
+                    TermField("Cash Closing", termDraft.cashClosing) { termDraft = termDraft.copy(cashClosing = it) }
+                    TermField("Receipts / Reports", termDraft.reports) { termDraft = termDraft.copy(reports = it) }
+                    TermField("Settings", termDraft.settings) { termDraft = termDraft.copy(settings = it) }
+                    TermField("Back button", termDraft.back) { termDraft = termDraft.copy(back = it) }
+                    TermField("New Sale button", termDraft.newSale) { termDraft = termDraft.copy(newSale = it) }
+                    Button(onClick = {
+                        runCatching {
+                            c.store.saveUiTerms(termDraft)
+                            c.refresh()
+                        }.onSuccess {
+                            Toast.makeText(context, "Naka-save ang button at translation terms.", Toast.LENGTH_SHORT).show()
+                        }.onFailure {
+                            Toast.makeText(context, it.message ?: "Hindi ma-save ang terms.", Toast.LENGTH_LONG).show()
+                        }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("I-save ang Translation Terms") }
+                }
+            }
 
             Card(Modifier.fillMaxWidth().padding(top = 18.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1125,6 +1197,11 @@ private fun SettingsScreen(c: PosController, back: () -> Unit) {
             }
         )
     }
+}
+
+@Composable
+private fun TermField(label: String, value: String, update: (String) -> Unit) {
+    OutlinedTextField(value, update, label = { Text(label) }, singleLine = true, modifier = Modifier.fillMaxWidth())
 }
 
 @Composable

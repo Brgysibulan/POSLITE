@@ -11,8 +11,8 @@ android {
         applicationId = "ph.poslite.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.7.0-native-dev"
+        versionCode = 6
+        versionName = "0.8.0-native-dev"
     }
 
     buildTypes {

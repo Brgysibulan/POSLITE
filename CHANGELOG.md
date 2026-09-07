@@ -6,6 +6,9 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Added
 
+- Native Android editable button/navigation terminology for 14 core labels, with Sari-sari and English presets.
+- Offline persistence of custom terminology in the existing settings table and automatic inclusion in native `.pos` backups.
+- New Android launcher/round icon with a white **S** on a black background, plus a matching SariPOS badge on Home.
 - Native shift/day cash closing with opening cash, cash sales, credit payments, expenses, expected cash, actual cash, variance, notes, and recent history.
 - Customer credit ledger viewer for sales, payments, references, and void reversals.
 - Damaged and expired inventory-loss values in Analytics.
@@ -25,7 +28,8 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Changed
 
-- Native development version advanced to `0.7.0-native-dev` with version code 5.
+- Native development version advanced to `0.8.0-native-dev` with version code 6.
+- Bottom navigation, More menu, principal screen titles, Back action, New Sale action, and Home purchase shortcut now react to saved terminology.
 - Estimated net profit now subtracts cost-valued damaged and expired inventory loss in addition to normal expenses.
 - Dashboard and analytics exclude voided sales and their COGS while keeping the original audit record.
 - Native restore replaces local operational data only after format/schema validation and explicit confirmation, inside one rollback-safe SQLite transaction.

@@ -5,7 +5,7 @@ SariPOS is a native Android, offline-first point-of-sale and inventory app for s
 ## Current development status
 
 - **Web reference:** v0.2.0 at repository root
-- **Native Android development:** v0.7.0-native-dev under `android-native/`
+- **Native Android development:** v0.8.0-native-dev under `android-native/`
 - **Primary product direction:** Android smartphone-first
 - **First verified native APK baseline:** commit `9f4acb298eb71cb13da5dcb863c1749acca50507`
 - **Latest verified native baseline:** build #20 — SUCCESS
@@ -29,6 +29,8 @@ The existing web/PWA application remains the stable workflow reference while the
 
 ## Native Android functions implemented
 
+- Editable Android navigation/button terminology with Sari-sari and English presets
+- White **S** / black-background Android launcher and Home branding
 - Home dashboard with sales today, transactions, gross profit, total credit, and low-stock count
 - Portrait-first Sell screen with full-width search/products and a separate cart/checkout bottom sheet
 - Sell / checkout with native scan action, selling-unit selection, cart, discount, cash/change, and credit/utang
