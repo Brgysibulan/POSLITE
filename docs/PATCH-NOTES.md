@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-07
 **Track:** `0.5.0-native-dev`
-**Status:** Source complete / GitHub Actions and real-device verification pending
+**Status:** GitHub Actions build successful / real-device verification pending
 
 ### Added
 
@@ -34,7 +34,11 @@
 
 ### Verification checklist
 
-- GitHub Actions Android compile/build: pending this commit.
+- GitHub Actions `Build SariPOS Native Android` run #21 passed at commit `4e5ea36b849b954155c08646b55d789667470804`.
+- Run ID: `34118596450`.
+- Artifact: `SariPOS-native-debug` (`10017300710`).
+- Artifact ZIP digest: `sha256:6e1a51aff17d060ad3ab866e9fecf9d3ce543ef1339efd18b1ac4c2ea26958bd`.
+- Web/document validation run #113 also passed.
 - Export a populated store, inspect the file, alter local data, restore, and compare all module totals.
 - Force-stop with a non-empty cart, reopen, and confirm valid cart lines recover.
 - Try a malformed, incomplete, web-format, and unsupported-schema backup; current data must remain unchanged.

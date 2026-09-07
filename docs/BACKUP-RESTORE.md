@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented in the `0.5.0-native-dev` source track. GitHub Actions compile/build and Android real-device verification are required before release promotion.
+Implemented in the `0.5.0-native-dev` source track. GitHub Actions native build #21 passed at commit `4e5ea36b849b954155c08646b55d789667470804`; Android real-device verification remains required before release promotion.
 
 ## User workflow
 

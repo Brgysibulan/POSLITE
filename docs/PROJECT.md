@@ -14,6 +14,7 @@
 **Latest verified native SariPOS UI baseline:** `e004dc557de93b6b7664b932c3d50a02b8f81845` — build #15 SUCCESS
 **Latest verified native hardening baseline:** `d5de5bc894162d29c81de928d0031125e8129acd` — build #18 SUCCESS
 **Verified portrait checkout baseline:** `31a2706b1c11e1c6a7b796a6b6777f7a3202564b` — build #20 SUCCESS
+**Verified native data-safety baseline:** `4e5ea36b849b954155c08646b55d789667470804` — build #21 SUCCESS
 
 ## Mandatory project rule
 

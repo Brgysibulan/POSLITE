@@ -36,6 +36,8 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Verified
 
+- Native Android build #21 succeeded at commit `4e5ea36b849b954155c08646b55d789667470804` with artifact `SariPOS-native-debug` (`10017300710`).
+- Web/document validation run #113 succeeded for the same source commit.
 - Native Android build #20 succeeded at commit `31a2706b1c11e1c6a7b796a6b6777f7a3202564b` with artifact `SariPOS-native-debug`.
 
 ## [Unreleased prior work] - 2026-09-05

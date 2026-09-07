@@ -11,7 +11,7 @@ POSlite now has a native Android implementation under `android-native/`. The exi
 
 A newer Android receipt fix is being validated after a real-device report that the old PDF/print action could close the app.
 
-Current development track: **`0.5.0-native-dev` / version code 3**. This track adds native data backup/restore and draft-cart recovery. The earlier 2026-09-07 portrait checkout hardening passed GitHub Actions build #20 at commit `31a2706b1c11e1c6a7b796a6b6777f7a3202564b`; the new data-safety build is pending verification.
+Current development track: **`0.5.0-native-dev` / version code 3**. This track adds native data backup/restore and draft-cart recovery. GitHub Actions native build #21 passed at commit `4e5ea36b849b954155c08646b55d789667470804`; real-device verification is next.
 
 ## Data safety foundation — 2026-09-07
 
