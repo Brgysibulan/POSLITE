@@ -2,7 +2,32 @@
 
 All notable SariPOS development changes are documented here. Historical entries may still use the former development name **POSlite**.
 
-## [Unreleased] - 2026-09-05
+## [Unreleased] - 2026-09-07
+
+### Added
+
+- Native portrait-first Sell layout with a full-width product browser and separate Material 3 cart/checkout bottom sheet.
+- Persistent cart count/total action on the Sell screen.
+- Android decimal keyboards and strict validation for money, quantity, cost, payment, discount, and stock fields.
+- Dark-mode Android system-bar resource styling.
+
+### Changed
+
+- Native development version advanced to `0.4.0-native-dev` with version code 2.
+- Analytics 7/30/90/365-day windows now start at local midnight of the first included calendar day.
+- Purchase, product, stock adjustment, credit payment, expense, and checkout database boundaries now reject invalid values.
+
+### Fixed
+
+- Corrected the pre-Android-10 receipt FileProvider path from the legacy `Pictures/POSlite` folder to `Pictures/SariPOS`.
+- Stock removal no longer silently clamps an excessive deduction to zero.
+- Invalid numeric form text is no longer silently saved as zero in the hardened Android transaction paths.
+
+### Preserved
+
+- Existing inventory conversion, weighted-average costing, COGS, credit-stock, package/database compatibility, and web-reference behavior.
+
+## [Unreleased prior work] - 2026-09-05
 
 ### Added
 

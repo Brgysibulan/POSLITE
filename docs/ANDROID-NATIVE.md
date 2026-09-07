@@ -11,6 +11,19 @@ POSlite now has a native Android implementation under `android-native/`. The exi
 
 A newer Android receipt fix is being validated after a real-device report that the old PDF/print action could close the app.
 
+Current development track: **`0.4.0-native-dev` / version code 2**. The 2026-09-07 portrait checkout hardening source is complete and requires GitHub Actions plus real-device verification before it replaces build #18 as the stable native baseline.
+
+## Portrait checkout hardening — 2026-09-07
+
+- Replaced the phone-hostile two-column Products/Cart Sell layout with a full-width product browser.
+- Added a persistent cart line-count/current-total action.
+- Moved cart editing, discount, Cash/Utang selection, payment fields, customer selection, and checkout into a Material 3 bottom sheet.
+- Added decimal keyboards and strict validation for transaction numbers.
+- Corrected rolling-hour analytics ranges to begin at local midnight for the selected calendar window.
+- Corrected the older-Android FileProvider folder from `Pictures/POSlite` to `Pictures/SariPOS`.
+- Added dark-mode system/status/navigation bar resources.
+- Preserved the inventory conversion, weighted-average costing, stock movement, COGS, and credit rules.
+
 ## Native Android direction
 
 The Android app is not a WebView wrapper. It uses native Android code and Android-local storage.
@@ -142,7 +155,7 @@ Examples remain the same as the web model:
 - cash/change or credit
 - lightweight JPG receipt generation
 - JPG quality set to about 68% to keep files small on phones
-- Android 10+ saves receipts under `Pictures/POSlite`
+- Android 10+ saves receipts under `Pictures/SariPOS`
 - older supported Android versions use the app-safe Pictures directory
 - JPG sharing through Android share intents
 - FileProvider used for safe receipt image sharing
@@ -166,7 +179,7 @@ The receipt output design was changed as follows:
 3. receipt is now drawn directly using Android `Canvas` and `Bitmap`
 4. image output is JPEG rather than PDF
 5. JPEG compression quality is approximately 68% for a smaller development/test file
-6. Android 10+ uses MediaStore and the `Pictures/POSlite` folder
+6. Android 10+ uses MediaStore and the `Pictures/SariPOS` folder
 7. cache/app-specific image files use FileProvider for safe sharing
 8. compatibility actions catch save/share errors and display a Toast instead of allowing an uncaught receipt-export exception to close the app
 
@@ -238,7 +251,7 @@ Credit sale:
 
 Workflow: `.github/workflows/android-native-build.yml`
 
-The workflow installs the Android toolchain, runs `:app:assembleDebug`, and uploads `app-debug.apk` as `POSlite-native-debug`.
+The workflow installs the Android toolchain, runs `:app:assembleDebug`, and uploads `app-debug.apk` as `SariPOS-native-debug`.
 
 No Android source change should be treated as the new stable native baseline until this workflow passes.
 
@@ -252,7 +265,7 @@ This allows continued GitHub Pages testing, side-by-side behavior comparison, an
 
 - install and test the JPG-receipt build on an actual Android phone
 - verify full Product -> Stock In -> Sell -> Receipt JPG -> Credit -> Analytics flow
-- verify JPG is visible in Pictures/POSlite on Android 10+
+- verify JPG is visible in Pictures/SariPOS on Android 10+
 - verify Share JPG to common Android apps
 - change any remaining legacy UI wording from PDF/Print to JPG-only wording
 - add `.pos` Android import/export compatibility

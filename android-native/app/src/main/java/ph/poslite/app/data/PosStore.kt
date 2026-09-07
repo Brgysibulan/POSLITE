@@ -297,8 +297,11 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
         openingCostBase: Double,
         units: List<UnitOption>
     ): Long {
-        require(name.isNotBlank()) { "Product name is required." }
-        require(units.isNotEmpty()) { "At least one unit is required." }
+        require(name.isNotBlank()) { "Kailangan ang pangalan ng paninda." }
+        require(baseUnit in setOf("pc", "g", "ml")) { "Hindi valid ang pangunahing sukat." }
+        require(lowStockBase >= 0 && openingStock >= 0 && openingCostBase >= 0) { "Hindi puwedeng negative ang stock o puhunan." }
+        require(units.isNotEmpty()) { "Kailangan ng kahit isang unit." }
+        require(units.all { it.label.isNotBlank() && it.qtyBase > 0 && it.sellPrice >= 0 }) { "May invalid na unit, quantity, o presyo." }
         val now = System.currentTimeMillis()
         val db = writableDatabase
         db.beginTransaction()
@@ -353,6 +356,8 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
     }
 
     fun adjustStock(productId: Long, mode: String, quantity: Double, note: String) {
+        require(mode in setOf("add", "remove", "set")) { "Hindi valid ang paraan ng pag-adjust." }
+        require(quantity >= 0 && (mode == "set" || quantity > 0)) { "Maglagay ng valid na dami." }
         val db = writableDatabase
         db.beginTransaction()
         try {
@@ -360,7 +365,10 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
             val old = product.stockBase
             val next = when (mode) {
                 "add" -> old + max(0.0, quantity)
-                "remove" -> max(0.0, old - max(0.0, quantity))
+                "remove" -> {
+                    require(quantity <= old + 0.0000001) { "Mas mataas ang ibabawas kaysa kasalukuyang stock." }
+                    old - quantity
+                }
                 "set" -> max(0.0, quantity)
                 else -> old
             }
@@ -376,7 +384,8 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
     }
 
     fun recordPurchase(supplier: String, lines: List<PurchaseLineInput>): Long {
-        require(lines.isNotEmpty()) { "Add at least one purchase item." }
+        require(lines.isNotEmpty()) { "Magdagdag ng kahit isang biniling paninda." }
+        require(lines.all { it.qty > 0 && it.totalCost > 0 }) { "Lahat ng kumprada ay kailangang may valid na dami at kabuuang bili." }
         val db = writableDatabase
         val now = System.currentTimeMillis()
         val number = "PUR-$now"
@@ -427,22 +436,24 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
         customerName: String,
         cash: Double
     ): SaleReceipt {
-        require(cart.isNotEmpty()) { "Cart is empty." }
+        require(cart.isNotEmpty()) { "Walang laman ang listahan ng benta." }
+        require(paymentType in setOf("cash", "credit")) { "Hindi valid ang paraan ng bayad." }
+        require(cart.all { it.qty > 0 && it.qtyBase > 0 && it.amount >= 0 }) { "May invalid na quantity sa listahan." }
         val db = writableDatabase
         val now = System.currentTimeMillis()
         val number = "POS-$now"
         val subtotal = cart.sumOf { it.amount }
         val safeDiscount = discount.coerceIn(0.0, subtotal)
         val total = max(0.0, subtotal - safeDiscount)
-        if (paymentType == "cash") require(cash >= total) { "Cash received is less than total." }
-        if (paymentType == "credit") require(customerId != null) { "Select a customer for credit sale." }
+        if (paymentType == "cash") require(cash >= total) { "Kulang ang natanggap na cash." }
+        if (paymentType == "credit") require(customerId != null) { "Pumili ng customer para sa utang." }
 
         db.beginTransaction()
         try {
             val groupedNeeded = cart.groupBy { it.product.id }.mapValues { entry -> entry.value.sumOf { it.qtyBase } }
             groupedNeeded.forEach { (productId, needed) ->
                 val p = getProductRow(db, productId) ?: error("Product not found.")
-                require(needed <= p.stockBase + 0.0000001) { "Not enough stock for ${p.name}." }
+                require(needed <= p.stockBase + 0.0000001) { "Hindi sapat ang stock ng ${p.name}." }
             }
             val resolvedCustomer = if (paymentType == "credit" && customerId != null) getCustomerRow(db, customerId) else null
             val finalCustomerName = when {
@@ -546,7 +557,7 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
     }
 
     fun recordCreditPayment(customerId: Long, amount: Double) {
-        require(amount > 0) { "Payment must be greater than zero." }
+        require(amount > 0) { "Ang bayad ay dapat higit sa zero." }
         val db = writableDatabase
         db.beginTransaction()
         try {
@@ -579,7 +590,7 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
 
     fun addExpense(category: String, description: String, amount: Double): Long {
         require(description.isNotBlank()) { "Description is required." }
-        require(amount >= 0) { "Amount cannot be negative." }
+        require(amount > 0) { "Ang halaga ay dapat higit sa zero." }
         return writableDatabase.insertOrThrow("expenses", null, ContentValues().apply {
             put("created_at", System.currentTimeMillis())
             put("category", category.ifBlank { "Store Expense" })

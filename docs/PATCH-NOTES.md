@@ -1,5 +1,52 @@
 # SariPOS Patch Notes
 
+## Latest patch — Native Android Portrait Checkout Hardening
+
+**Date:** 2026-09-07
+**Track:** `0.4.0-native-dev`
+**Status:** Source completed / GitHub Actions and real-device verification required
+
+### Added
+
+- Portrait-first native **Benta** workflow with a full-width search/scanner row and full-width product list.
+- Persistent cart summary showing cart line count and current total.
+- Separate Material 3 bottom-sheet cart and checkout so products and checkout are no longer squeezed into two phone columns.
+- Decimal Android keyboards for transaction amounts, quantities, costs, stock adjustments, credit payments, and expenses.
+- Strict reusable number validation with sari-sari-friendly error feedback.
+- Night resource styling so Android system/status/navigation bars match SariPOS dark mode.
+
+### Changed
+
+- Successful barcode/QR product lookup now returns to the complete product list after adding the scanned item.
+- Android development version advanced from `0.3.0-native-dev` / version code 1 to `0.4.0-native-dev` / version code 2.
+- Analytics windows now begin at local midnight for the first included calendar day instead of subtracting raw 24-hour blocks from the current time.
+- Product, purchase, stock adjustment, credit payment, and expense forms reject invalid values instead of silently converting invalid text to zero.
+- Several remaining Android action labels were changed to clearer Filipino wording.
+
+### Fixed
+
+- Fixed the older-Android receipt FileProvider mismatch: receipt code writes to `Pictures/SariPOS`, and the allowed provider path now points to the same folder instead of the legacy `Pictures/POSlite` folder.
+- Stock removal now rejects a quantity greater than available stock instead of silently clamping stock to zero.
+- Purchase records now require positive quantity and purchase cost.
+- Expense records now require a positive amount.
+- Checkout now validates payment type, cart quantities, discount, and cash before saving.
+
+### Preserved
+
+- Base-unit piece/pack and gram/kilo conversion rules.
+- Weighted-average inventory costing and COGS behavior.
+- Immediate stock deduction for product-credit sales.
+- Existing package name, SQLite filename, and web/PWA reference build for compatibility.
+
+### Verification checklist
+
+- GitHub Actions `Build SariPOS Native Android` must pass before this becomes the next verified baseline.
+- Test on a portrait Android phone: search/scan → add products → open cart → cash/utang checkout → JPG receipt.
+- Test Save/Share JPG on Android 8–9 and Android 10+.
+- Test invalid and negative inputs across products, purchases, stock, credit payments, expenses, discount, and cash.
+
+---
+
 ## Latest patch — Native Android User-Friendly SariPOS UI
 
 **Date:** 2026-09-05  

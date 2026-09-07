@@ -1,15 +1,16 @@
-# POSlite
+# SariPOS
 
-POSlite is an offline-first point-of-sale system designed for sari-sari stores and similar micro-retail businesses.
+SariPOS is a native Android, offline-first point-of-sale and inventory app for sari-sari stores and small retailers. It supports barcode/QR-assisted selling, piece/pack and gram/kilo conversions, purchases, stock, utang, expenses, profit analytics, and shareable JPG receipts without monthly fees.
 
 ## Current development status
 
 - **Web reference:** v0.2.0 at repository root
-- **Native Android development:** v0.3.0-native-dev under `android-native/`
+- **Native Android development:** v0.4.0-native-dev under `android-native/`
 - **Primary product direction:** Android smartphone-first
 - **First verified native APK baseline:** commit `9f4acb298eb71cb13da5dcb863c1749acca50507`
-- **Native Android build:** GitHub Actions run #8 — SUCCESS
-- **APK artifact:** `POSlite-native-debug`
+- **Latest verified native baseline:** build #18 — SUCCESS
+- **Current portrait checkout hardening:** awaiting GitHub Actions verification
+- **APK artifact:** `SariPOS-native-debug`
 
 The existing web/PWA application remains the stable workflow reference while the native Android implementation is tested on real devices. The Android app is a real Kotlin/Jetpack Compose application, not a WebView wrapper.
 
@@ -18,8 +19,8 @@ The existing web/PWA application remains the stable workflow reference while the
 - Kotlin
 - Jetpack Compose
 - Android SQLite (`poslite-native.db`)
-- Android Print Framework / Save as PDF
-- Android share intents
+- Native Android Canvas/Bitmap JPG receipt generation
+- Android MediaStore/FileProvider save and share
 - Google Code Scanner development integration for barcode/QR capture
 - Android Gradle Plugin 9.4 built-in Kotlin
 - Gradle 9.6
@@ -29,7 +30,8 @@ The existing web/PWA application remains the stable workflow reference while the
 ## Native Android functions implemented
 
 - Home dashboard with sales today, transactions, gross profit, total credit, and low-stock count
-- Sell / checkout with search, native scan action, selling-unit selection, cart, discount, cash/change, and credit/utang
+- Portrait-first Sell screen with full-width search/products and a separate cart/checkout bottom sheet
+- Sell / checkout with native scan action, selling-unit selection, cart, discount, cash/change, and credit/utang
 - Optional customer name for cash sales and saved customer requirement for credit sales
 - Products with optional/no barcode, categories, piece/gram/milliliter base units, low-stock threshold, opening stock/cost, and multiple sell/buy unit conversions
 - Purchases / Stock In with supplier, multiple lines, unit conversions, weighted-average costing, and stock movements
@@ -38,7 +40,9 @@ The existing web/PWA application remains the stable workflow reference while the
 - Expenses
 - Analytics for 7/30/90/365 days: Sales, COGS, Gross Profit, Expenses, Estimated Net, and Purchase Spend
 - Native receipt generation after successful checkout
-- Receipt history, Android Share, Print, and Save-as-PDF path with an 80 mm-oriented layout
+- Receipt history plus native JPG Save and Share actions
+- Strict transaction input checks for invalid/negative quantities, costs, payments, discounts, and stock adjustments
+- Calendar-day-based 7/30/90/365-day analytics windows
 - Store settings stored locally in SQLite
 
 ## Native Android database
@@ -137,7 +141,7 @@ Workflow: `.github/workflows/android-native-build.yml`
 
 The first verified native build completed successfully on run #8. It passed Android SDK setup, Gradle setup, `:app:assembleDebug`, and artifact upload.
 
-The uploaded artifact is `POSlite-native-debug`. Future native source changes must continue to pass this workflow before they replace the current native baseline.
+The uploaded artifact is `SariPOS-native-debug`. Future native source changes must continue to pass this workflow before they replace the current native baseline.
 
 ## Web/PWA reference
 
@@ -152,10 +156,10 @@ This web build is intentionally preserved while the native Android app is stabil
 
 ## Remaining native priorities
 
-1. Install and test the verified debug APK on an actual Android phone.
+1. Install and test the portrait checkout build on an actual Android phone.
 2. Test Products → Purchase → Sell → Receipt → Credit → Analytics end to end using real sample transactions.
 3. Test barcode scanning on the target Android device.
-4. Add Android `.pos` import/export compatibility.
+4. Add Android `.pos` import/export compatibility as the next data-safety priority.
 5. Add POSlite-generated product QR labels.
 6. Harden scanner behavior; optionally move to a fully bundled CameraX + ML Kit scanner if complete offline model availability is required.
 7. Add direct Bluetooth thermal-printer integration.

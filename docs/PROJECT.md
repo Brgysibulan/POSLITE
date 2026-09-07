@@ -7,11 +7,13 @@
 **Repository:** `Brgysibulan/POSLITE` (kept for compatibility; not renamed yet)  
 **Current phase:** Native Android development + Android-first web workflow validation  
 **Web reference version:** v0.2.0 plus documented development modules  
-**Native Android development version:** v0.3.0-native-dev  
+**Native Android development version:** v0.4.0-native-dev
 **Primary platform:** Android smartphone  
 **First verified native APK baseline:** `9f4acb298eb71cb13da5dcb863c1749acca50507` — build #8 SUCCESS  
 **Verified native JPG-receipt hotfix baseline:** `8b0ea16b79a073aeed1b43bfdaf9fd335e08e631` — build #12 SUCCESS  
 **Latest verified native SariPOS UI baseline:** `e004dc557de93b6b7664b932c3d50a02b8f81845` — build #15 SUCCESS
+**Latest verified native hardening baseline:** `d5de5bc894162d29c81de928d0031125e8129acd` — build #18 SUCCESS
+**Current portrait checkout patch:** source complete; CI/device verification pending
 
 ## Mandatory project rule
 
@@ -68,6 +70,14 @@ Smartphone-first rules:
 - fast product lookup
 - understandable stock and profit summaries
 - safe transaction history
+
+## Native Android portrait checkout hardening — 2026-09-07
+
+The native **Benta** screen now uses one full-width product column on a phone. The cart count and total remain visible through a persistent action, while cart editing, payment type, discount, cash/change, customer selection, and checkout open in a dedicated Material 3 bottom sheet.
+
+The same pass adds strict numeric validation at the UI and database boundaries, corrects calendar-day analytics ranges, rejects excessive stock removal, aligns the older-Android FileProvider receipt path with `Pictures/SariPOS`, adds dark system-bar resources, and advances the native development build to `0.4.0-native-dev` / version code 2.
+
+The accounting and inventory engines were intentionally preserved: base-unit conversions, weighted-average cost, COGS snapshots, stock movement records, and credit-sale stock deduction remain unchanged.
 
 ## Native Android architecture
 

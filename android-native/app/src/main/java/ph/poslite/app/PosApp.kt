@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,6 +27,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
@@ -43,6 +46,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
@@ -67,6 +72,19 @@ private enum class Screen { HOME, SELL, PRODUCTS, MORE, PURCHASES, INVENTORY, CR
 private fun money(value: Double): String = NumberFormat.getCurrencyInstance(Locale("en", "PH")).format(value)
 private fun fmtDate(value: Long): String = SimpleDateFormat("MMM d, yyyy h:mm a", Locale("en", "PH")).format(Date(value))
 private fun num(value: String): Double = value.toDoubleOrNull() ?: 0.0
+
+private fun requiredNumber(value: String, label: String, allowZero: Boolean = false): Double {
+    val parsed = value.trim().replace(',', '.').toDoubleOrNull()
+        ?: error("Maglagay ng tamang numero para sa $label.")
+    require(parsed.isFinite()) { "Hindi valid ang $label." }
+    require(if (allowZero) parsed >= 0.0 else parsed > 0.0) {
+        if (allowZero) "$label ay hindi puwedeng negative." else "$label ay dapat higit sa zero."
+    }
+    return parsed
+}
+
+private fun optionalNumber(value: String, label: String): Double =
+    if (value.isBlank()) 0.0 else requiredNumber(value, label, allowZero = true)
 
 private fun stockText(p: Product): String = when (p.baseUnit) {
     "g" -> if (p.stockBase >= 1000) "${trimNumber(p.stockBase / 1000)} kg" else "${trimNumber(p.stockBase)} g"
@@ -105,8 +123,14 @@ private class PosController(context: Context) {
     }
 
     fun analytics(days: Int): AnalyticsSummary {
-        val from = System.currentTimeMillis() - (days.toLong() - 1L) * 86_400_000L
-        return store.getAnalytics(from)
+        val calendar = java.util.Calendar.getInstance().apply {
+            add(java.util.Calendar.DAY_OF_YEAR, -(days - 1))
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }
+        return store.getAnalytics(calendar.timeInMillis)
     }
 
     fun addToCart(product: Product, unit: UnitOption) {
@@ -248,6 +272,7 @@ private fun SellScreen(c: PosController) {
     var customerName by remember { mutableStateOf("") }
     var paymentType by remember { mutableStateOf("cash") }
     var customerId by remember { mutableStateOf<Long?>(null) }
+    var showCart by remember { mutableStateOf(false) }
     val filtered = c.products.filter {
         search.isBlank() || it.name.contains(search, true) || it.category.contains(search, true) || (it.barcode?.contains(search, true) == true)
     }
@@ -266,64 +291,147 @@ private fun SellScreen(c: PosController) {
                         val product = c.products.firstOrNull { !it.barcode.isNullOrBlank() && it.barcode == code }
                         val unit = product?.units?.firstOrNull { it.saleEnabled }
                         if (product != null && unit != null) {
-                            runCatching { c.addToCart(product, unit) }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() }
+                            runCatching { c.addToCart(product, unit) }
+                                .onSuccess { search = "" }
+                                .onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() }
                         } else Toast.makeText(context, "Walang paninda na naka-assign sa code na ito.", Toast.LENGTH_SHORT).show()
                     }
                     .addOnFailureListener { Toast.makeText(context, it.message ?: "Hindi available ang scanner.", Toast.LENGTH_SHORT).show() }
             }) { Text("Scan") }
         }
 
-        Row(Modifier.fillMaxWidth().weight(1f).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            LazyColumn(Modifier.weight(1f)) {
-                items(filtered, key = { it.id }) { product ->
-                    ProductSellCard(product) { unit ->
-                        runCatching { c.addToCart(product, unit) }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() }
+        LazyColumn(
+            Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 12.dp, bottom = 12.dp)
+        ) {
+            if (filtered.isEmpty()) {
+                item { Text("Walang nakitang paninda.", modifier = Modifier.padding(vertical = 24.dp)) }
+            }
+            items(filtered, key = { it.id }) { product ->
+                ProductSellCard(product) { unit ->
+                    runCatching { c.addToCart(product, unit) }
+                        .onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+        if (c.cart.isNotEmpty()) {
+            Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Button(
+                    onClick = { showCart = true },
+                    modifier = Modifier.fillMaxWidth().padding(8.dp)
+                ) { Text("Listahan (${c.cart.size}) · ${money(total)}") }
+            }
+        }
+    }
+
+    if (showCart) {
+        ModalBottomSheet(onDismissRequest = { showCart = false }) {
+            CartCheckoutContent(
+                c = c,
+                discount = discount,
+                onDiscountChange = { discount = it },
+                cash = cash,
+                onCashChange = { cash = it },
+                customerName = customerName,
+                onCustomerNameChange = { customerName = it },
+                paymentType = paymentType,
+                onPaymentTypeChange = { paymentType = it },
+                customerId = customerId,
+                onCustomerChange = { customerId = it },
+                onCompleted = { showCart = false }
+            )
+        }
+    }
+}
+
+@Composable
+private fun CartCheckoutContent(
+    c: PosController,
+    discount: String,
+    onDiscountChange: (String) -> Unit,
+    cash: String,
+    onCashChange: (String) -> Unit,
+    customerName: String,
+    onCustomerNameChange: (String) -> Unit,
+    paymentType: String,
+    onPaymentTypeChange: (String) -> Unit,
+    customerId: Long?,
+    onCustomerChange: (Long?) -> Unit,
+    onCompleted: () -> Unit
+) {
+    val context = LocalContext.current
+    val subtotal = c.cart.sumOf { it.amount }
+    val safeDiscount = discount.trim().replace(',', '.').toDoubleOrNull()?.coerceIn(0.0, subtotal) ?: 0.0
+    val total = max(0.0, subtotal - safeDiscount)
+
+    LazyColumn(
+        Modifier.fillMaxWidth().imePadding().navigationBarsPadding(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, bottom = 28.dp)
+    ) {
+        item { Text("Listahan ng Benta", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
+        items(c.cart.size) { index ->
+            val line = c.cart[index]
+            Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                Column(Modifier.padding(12.dp)) {
+                    Text(line.product.name, fontWeight = FontWeight.Bold)
+                    Text("${line.unit.label} · ${money(line.unit.sellPrice)}")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = { c.changeCartQty(index, -(if (line.product.baseUnit == "pc") 1.0 else 0.01)) }) { Text("−") }
+                        Text(trimNumber(line.qty), modifier = Modifier.padding(horizontal = 8.dp))
+                        TextButton(onClick = {
+                            runCatching { c.changeCartQty(index, if (line.product.baseUnit == "pc") 1.0 else 0.01) }
+                                .onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() }
+                        }) { Text("+") }
+                        Spacer(Modifier.weight(1f))
+                        Text(money(line.amount), fontWeight = FontWeight.Bold)
                     }
-                    Spacer(Modifier.height(8.dp))
                 }
             }
-            LazyColumn(Modifier.weight(1f)) {
-                item { Text("Listahan ng Benta", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
-                items(c.cart.size) { index ->
-                    val line = c.cart[index]
-                    Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        Column(Modifier.padding(10.dp)) {
-                            Text(line.product.name, fontWeight = FontWeight.Bold)
-                            Text("${line.unit.label} · ${money(line.unit.sellPrice)}")
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                TextButton(onClick = { runCatching { c.changeCartQty(index, -(if (line.product.baseUnit == "pc") 1.0 else 0.01)) } }) { Text("−") }
-                                Text(trimNumber(line.qty), modifier = Modifier.padding(horizontal = 4.dp))
-                                TextButton(onClick = { runCatching { c.changeCartQty(index, if (line.product.baseUnit == "pc") 1.0 else 0.01) }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() } }) { Text("+") }
-                            }
-                            Text(money(line.amount), fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-                item {
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                    Text("Subtotal ${money(subtotal)}")
-                    OutlinedTextField(discount, { discount = it }, label = { Text("Discount") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    Text("TOTAL ${money(total)}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        if (paymentType == "cash") Button(onClick = {}) { Text("Cash") } else OutlinedButton(onClick = { paymentType = "cash" }) { Text("Cash") }
-                        if (paymentType == "credit") Button(onClick = {}) { Text("Utang") } else OutlinedButton(onClick = { paymentType = "credit" }) { Text("Utang") }
-                    }
-                    if (paymentType == "cash") {
-                        OutlinedTextField(customerName, { customerName = it }, label = { Text("Pangalan ng customer (optional)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                        OutlinedTextField(cash, { cash = it }, label = { Text("Bayad na cash") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                        Text("Sukli ${money(max(0.0, num(cash) - total))}")
-                    } else {
-                        CustomerPicker(c.customers, customerId) { customerId = it }
-                    }
-                    Button(
-                        onClick = {
-                            runCatching { c.checkout(num(discount), paymentType, customerId, customerName, num(cash)) }
-                                .onFailure { Toast.makeText(context, it.message, Toast.LENGTH_LONG).show() }
-                        },
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                    ) { Text("Kumpletuhin ang Benta") }
-                }
+        }
+        item {
+            HorizontalDivider(Modifier.padding(vertical = 10.dp))
+            Text("Subtotal ${money(subtotal)}")
+            OutlinedTextField(
+                discount,
+                onDiscountChange,
+                label = { Text("Discount") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text("TOTAL ${money(total)}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (paymentType == "cash") Button(onClick = {}) { Text("Cash") } else OutlinedButton(onClick = { onPaymentTypeChange("cash") }) { Text("Cash") }
+                if (paymentType == "credit") Button(onClick = {}) { Text("Utang") } else OutlinedButton(onClick = { onPaymentTypeChange("credit") }) { Text("Utang") }
             }
+            if (paymentType == "cash") {
+                OutlinedTextField(customerName, onCustomerNameChange, label = { Text("Pangalan ng customer (optional)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(
+                    cash,
+                    onCashChange,
+                    label = { Text("Bayad na cash") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                )
+                Text("Sukli ${money(max(0.0, num(cash) - total))}")
+            } else {
+                CustomerPicker(c.customers, customerId, onCustomerChange)
+            }
+            Button(
+                onClick = {
+                    runCatching {
+                        val checkedDiscount = optionalNumber(discount, "discount")
+                        require(checkedDiscount <= subtotal) { "Mas mataas ang discount kaysa subtotal." }
+                        val checkedCash = if (paymentType == "cash") requiredNumber(cash, "bayad na cash", allowZero = total == 0.0) else 0.0
+                        c.checkout(checkedDiscount, paymentType, customerId, customerName, checkedCash)
+                    }.onSuccess { onCompleted() }
+                        .onFailure { Toast.makeText(context, it.message, Toast.LENGTH_LONG).show() }
+                },
+                enabled = c.cart.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+            ) { Text("Kumpletuhin ang Benta") }
         }
     }
 }
@@ -425,7 +533,7 @@ private fun ProductEditor(c: PosController, product: Product?, onDismiss: () -> 
     Dialog(onDismissRequest = onDismiss) {
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-                Text(if (product == null) "Add Paninda" else "Edit Paninda", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(if (product == null) "Dagdag Paninda" else "Ayusin ang Paninda", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 OutlinedTextField(name, { name = it }, label = { Text("Pangalan ng paninda") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(category, { category = it }, label = { Text("Kategorya") }, modifier = Modifier.fillMaxWidth())
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -439,10 +547,10 @@ private fun ProductEditor(c: PosController, product: Product?, onDismiss: () -> 
                         if (baseUnit == code) Button(onClick = {}) { Text(label) } else OutlinedButton(onClick = { if (product == null) baseUnit = code }, enabled = product == null) { Text(label) }
                     }
                 }
-                OutlinedTextField(lowStock, { lowStock = it }, label = { Text("Low stock alert") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(lowStock, { lowStock = it }, label = { Text("Babala kapag kaunti na") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
                 if (product == null) {
-                    OutlinedTextField(openingStock, { openingStock = it }, label = { Text("Panimulang stock") }, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(openingCost, { openingCost = it }, label = { Text("Puhunan bawat pangunahing sukat") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(openingStock, { openingStock = it }, label = { Text("Panimulang stock") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(openingCost, { openingCost = it }, label = { Text("Puhunan bawat pangunahing sukat") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
                 } else Text("Kasalukuyang stock: ${stockText(product)}")
                 Spacer(Modifier.height(8.dp))
                 Text("Paraan ng Benta / Kumprada", fontWeight = FontWeight.Bold)
@@ -452,8 +560,8 @@ private fun ProductEditor(c: PosController, product: Product?, onDismiss: () -> 
                         Column(Modifier.padding(8.dp)) {
                             OutlinedTextField(u.label, { value -> units = units.toMutableList().also { it[index] = u.copy(label = value) } }, label = { Text("Tawag sa unit") }, modifier = Modifier.fillMaxWidth())
                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                OutlinedTextField(u.qtyBase, { value -> units = units.toMutableList().also { it[index] = u.copy(qtyBase = value) } }, label = { Text("Lamang base qty") }, modifier = Modifier.weight(1f))
-                                OutlinedTextField(u.sellPrice, { value -> units = units.toMutableList().also { it[index] = u.copy(sellPrice = value) } }, label = { Text("Presyo ng benta") }, modifier = Modifier.weight(1f))
+                                OutlinedTextField(u.qtyBase, { value -> units = units.toMutableList().also { it[index] = u.copy(qtyBase = value) } }, label = { Text("Lamang base qty") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
+                                OutlinedTextField(u.sellPrice, { value -> units = units.toMutableList().also { it[index] = u.copy(sellPrice = value) } }, label = { Text("Presyo ng benta") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Checkbox(u.sell, { value -> units = units.toMutableList().also { it[index] = u.copy(sell = value) } }); Text("Benta")
@@ -463,15 +571,34 @@ private fun ProductEditor(c: PosController, product: Product?, onDismiss: () -> 
                         }
                     }
                 }
-                OutlinedButton(onClick = { units = units + DraftUnit("", "1", "0") }) { Text("Add Unit") }
+                OutlinedButton(onClick = { units = units + DraftUnit("", "1", "0") }) { Text("Dagdag Unit") }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = onDismiss) { Text("Kanselahin") }
                     Button(onClick = {
-                        val parsed = units.map { UnitOption(label = it.label.trim(), qtyBase = num(it.qtyBase), sellPrice = num(it.sellPrice), saleEnabled = it.sell, purchaseEnabled = it.buy) }.filter { it.label.isNotBlank() && it.qtyBase > 0 }
                         runCatching {
+                            val parsed = units.mapIndexed { index, unit ->
+                                require(unit.label.isNotBlank()) { "Lagyan ng pangalan ang unit ${index + 1}." }
+                                UnitOption(
+                                    label = unit.label.trim(),
+                                    qtyBase = requiredNumber(unit.qtyBase, "base quantity ng ${unit.label}"),
+                                    sellPrice = requiredNumber(unit.sellPrice, "presyo ng ${unit.label}", allowZero = true),
+                                    saleEnabled = unit.sell,
+                                    purchaseEnabled = unit.buy
+                                )
+                            }
                             require(parsed.any { it.saleEnabled }) { "Kailangan ng kahit isang unit para sa benta." }
                             require(parsed.any { it.purchaseEnabled }) { "Kailangan ng kahit isang unit para sa kumprada." }
-                            c.store.saveProduct(product?.id, name, category, if (noBarcode) null else barcode, baseUnit, num(lowStock), num(openingStock), num(openingCost), parsed)
+                            c.store.saveProduct(
+                                product?.id,
+                                name,
+                                category,
+                                if (noBarcode) null else barcode,
+                                baseUnit,
+                                requiredNumber(lowStock, "low-stock alert", allowZero = true),
+                                if (product == null) requiredNumber(openingStock, "panimulang stock", allowZero = true) else 0.0,
+                                if (product == null) requiredNumber(openingCost, "panimulang puhunan", allowZero = true) else 0.0,
+                                parsed
+                            )
                             c.refresh(); onDismiss()
                         }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_LONG).show() }
                     }) { Text("I-save") }
@@ -518,14 +645,16 @@ private fun PurchaseScreen(c: PosController, back: () -> Unit) {
             val buyUnits = selectedProduct?.units?.filter { it.purchaseEnabled }.orEmpty()
             PickerButton("Unit", selectedUnit?.label ?: "Piliin ang unit", buyUnits.map { it.label }) { index -> selectedUnit = buyUnits[index] }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(qty, { qty = it }, label = { Text("Dami") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(cost, { cost = it }, label = { Text("Kabuuang bili") }, modifier = Modifier.weight(1f))
+                OutlinedTextField(qty, { qty = it }, label = { Text("Dami") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
+                OutlinedTextField(cost, { cost = it }, label = { Text("Kabuuang bili") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
             }
             Button(onClick = {
                 val p = selectedProduct; val u = selectedUnit
-                if (p != null && u != null && num(qty) > 0) {
-                    draft = draft + PurchaseDraft(p, u, num(qty), num(cost)); qty = "1"; cost = "0"
-                }
+                runCatching {
+                    require(p != null && u != null) { "Pumili ng paninda at unit." }
+                    draft = draft + PurchaseDraft(p, u, requiredNumber(qty, "dami"), requiredNumber(cost, "kabuuang bili"))
+                    qty = "1"; cost = ""
+                }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_LONG).show() }
             }) { Text("Idagdag sa Kumprada") }
             draft.forEachIndexed { i, line ->
                 Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
@@ -592,12 +721,12 @@ private fun AdjustmentDialog(c: PosController, product: Product, dismiss: () -> 
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     listOf("add" to "Dagdag", "remove" to "Bawas", "set" to "Itakda").forEach { (m, label) -> if (mode == m) Button(onClick = {}) { Text(label) } else OutlinedButton(onClick = { mode = m }) { Text(label) } }
                 }
-                OutlinedTextField(qty, { qty = it }, label = { Text("Dami") })
+                OutlinedTextField(qty, { qty = it }, label = { Text("Dami") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
                 OutlinedTextField(note, { note = it }, label = { Text("Dahilan / note") })
             }
         },
-        confirmButton = { Button(onClick = { runCatching { c.store.adjustStock(product.id, mode, num(qty), note); c.refresh(); dismiss() }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() } }) { Text("I-save") } },
-        dismissButton = { TextButton(onClick = dismiss) { Text("Cancel") } }
+        confirmButton = { Button(onClick = { runCatching { c.store.adjustStock(product.id, mode, requiredNumber(qty, "dami", allowZero = mode == "set"), note); c.refresh(); dismiss() }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() } }) { Text("I-save") } },
+        dismissButton = { TextButton(onClick = dismiss) { Text("Kanselahin") } }
     )
 }
 
@@ -636,7 +765,7 @@ private fun CustomerDialog(c: PosController, dismiss: () -> Unit) {
 private fun CustomerPaymentDialog(c: PosController, customer: Customer, dismiss: () -> Unit) {
     val context = LocalContext.current
     var amount by remember { mutableStateOf("") }
-    AlertDialog(onDismissRequest = dismiss, title = { Text("Bayad — ${customer.name}") }, text = { Column { Text("Kulang pa ${money(customer.balance)}"); OutlinedTextField(amount, { amount = it }, label = { Text("Halaga ng bayad") }) } }, confirmButton = { Button(onClick = { runCatching { c.store.recordCreditPayment(customer.id, num(amount)); c.refresh(); dismiss() }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() } }) { Text("I-record") } }, dismissButton = { TextButton(onClick = dismiss) { Text("Cancel") } })
+    AlertDialog(onDismissRequest = dismiss, title = { Text("Bayad — ${customer.name}") }, text = { Column { Text("Kulang pa ${money(customer.balance)}"); OutlinedTextField(amount, { amount = it }, label = { Text("Halaga ng bayad") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)) } }, confirmButton = { Button(onClick = { runCatching { c.store.recordCreditPayment(customer.id, requiredNumber(amount, "halaga ng bayad")); c.refresh(); dismiss() }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() } }) { Text("I-record") } }, dismissButton = { TextButton(onClick = dismiss) { Text("Kanselahin") } })
 }
 
 @Composable
@@ -661,7 +790,7 @@ private fun ExpensesScreen(c: PosController, back: () -> Unit) {
 private fun ExpenseDialog(c: PosController, dismiss: () -> Unit) {
     val context = LocalContext.current
     var category by remember { mutableStateOf("Gastos sa Tindahan") }; var desc by remember { mutableStateOf("") }; var amount by remember { mutableStateOf("") }
-    AlertDialog(onDismissRequest = dismiss, title = { Text("Add Gastos") }, text = { Column { OutlinedTextField(category, { category = it }, label = { Text("Kategorya") }); OutlinedTextField(desc, { desc = it }, label = { Text("Ano ang ginastusan?") }); OutlinedTextField(amount, { amount = it }, label = { Text("Halaga") }) } }, confirmButton = { Button(onClick = { runCatching { c.store.addExpense(category, desc, num(amount)); c.refresh(); dismiss() }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() } }) { Text("I-save") } }, dismissButton = { TextButton(onClick = dismiss) { Text("Cancel") } })
+    AlertDialog(onDismissRequest = dismiss, title = { Text("Dagdag Gastos") }, text = { Column { OutlinedTextField(category, { category = it }, label = { Text("Kategorya") }); OutlinedTextField(desc, { desc = it }, label = { Text("Ano ang ginastusan?") }); OutlinedTextField(amount, { amount = it }, label = { Text("Halaga") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)) } }, confirmButton = { Button(onClick = { runCatching { c.store.addExpense(category, desc, requiredNumber(amount, "halaga")); c.refresh(); dismiss() }.onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() } }) { Text("I-save") } }, dismissButton = { TextButton(onClick = dismiss) { Text("Kanselahin") } })
 }
 
 @Composable
