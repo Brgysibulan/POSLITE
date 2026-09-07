@@ -7,7 +7,7 @@
 **Repository:** `Brgysibulan/POSLITE` (kept for compatibility; not renamed yet)  
 **Current phase:** Native Android development + Android-first web workflow validation  
 **Web reference version:** v0.2.0 plus documented development modules  
-**Native Android development version:** v0.4.0-native-dev
+**Native Android development version:** v0.5.0-native-dev
 **Primary platform:** Android smartphone  
 **First verified native APK baseline:** `9f4acb298eb71cb13da5dcb863c1749acca50507` — build #8 SUCCESS  
 **Verified native JPG-receipt hotfix baseline:** `8b0ea16b79a073aeed1b43bfdaf9fd335e08e631` — build #12 SUCCESS  
@@ -114,8 +114,19 @@ Tables:
 9. `credit_ledger`
 10. `expenses`
 11. `settings`
+12. `draft_cart`
 
 The native Android operational database is independent from browser IndexedDB during development/testing.
+
+## Native Android data safety foundation — 2026-09-07
+
+The `0.5.0-native-dev` track adds an Android-owned full-database backup and restore workflow in **Ayos ng App**. Export uses the Android system document picker, so the store owner chooses where the `.pos` file is saved without storage permission workarounds. Import validates the format and schema and shows record counts before the user confirms replacement.
+
+Restore deletes and reinserts the supported native tables inside one SQLite transaction. Any invalid row or insertion failure rolls the entire operation back. The format is `SariPOS-Android` schema version 1 and includes products, units, customers, sales/items, purchases/items, stock movements, credit ledger, expenses, settings, and the draft cart.
+
+Database version 2 introduces `draft_cart`. Existing version-1 native installs receive a non-destructive `CREATE TABLE IF NOT EXISTS` migration. Cart updates are saved locally after add/remove/quantity changes, restored on app startup, and cleared in the same database transaction as a successful checkout.
+
+The native backup is not the same as the web/PWA `POSlite` schema 1/2 format. Native-to-web cross-import remains unimplemented and must not be implied by the shared `.pos` extension. See `docs/BACKUP-RESTORE.md`.
 
 ## Web/PWA reference architecture
 
@@ -364,7 +375,7 @@ Native Android should use the same config concepts/schema when the customization
 - `.pos` = business/operational data backup
 - `.posconfig` = reusable appearance and wording only
 
-Native Android `.pos` import/export compatibility remains planned.
+Native Android now has its own `SariPOS-Android` schema-1 `.pos` export/restore. Conversion compatibility with the separate web `POSlite` schema-2 backup remains planned.
 
 ## Development/mock GitHub data
 

@@ -5,7 +5,7 @@ SariPOS is a native Android, offline-first point-of-sale and inventory app for s
 ## Current development status
 
 - **Web reference:** v0.2.0 at repository root
-- **Native Android development:** v0.4.0-native-dev under `android-native/`
+- **Native Android development:** v0.5.0-native-dev under `android-native/`
 - **Primary product direction:** Android smartphone-first
 - **First verified native APK baseline:** commit `9f4acb298eb71cb13da5dcb863c1749acca50507`
 - **Latest verified native baseline:** build #20 — SUCCESS
@@ -131,7 +131,7 @@ Native Android receipts include:
 - total
 - cash/change or credit
 
-Receipts can be viewed from recent receipt history, shared through Android, or sent through Android Print / Save as PDF.
+Receipts can be viewed from recent receipt history and saved/shared as lightweight JPG images through Android.
 
 Direct Bluetooth thermal-printer integration remains a later native hardening feature.
 
@@ -159,7 +159,7 @@ This web build is intentionally preserved while the native Android app is stabil
 1. Install and test the portrait checkout build on an actual Android phone.
 2. Test Products → Purchase → Sell → Receipt → Credit → Analytics end to end using real sample transactions.
 3. Test barcode scanning on the target Android device.
-4. Add Android `.pos` import/export compatibility as the next data-safety priority.
+4. Complete cross-platform conversion between the new native `SariPOS-Android` `.pos` backup and the existing web/PWA `POSlite` `.pos` schema.
 5. Add POSlite-generated product QR labels.
 6. Harden scanner behavior; optionally move to a fully bundled CameraX + ML Kit scanner if complete offline model availability is required.
 7. Add direct Bluetooth thermal-printer integration.
@@ -170,6 +170,7 @@ This web build is intentionally preserved while the native Android app is stabil
 
 - `docs/PROJECT.md` — master project documentation
 - `docs/ANDROID-NATIVE.md` — native Android architecture, successful build baseline, and migration status
+- `docs/BACKUP-RESTORE.md` — native backup format, restore guarantees, limitations, and device-test checklist
 - `docs/BARCODE-SCANNER.md` — scanner behavior
 - `docs/RECEIPTS.md` — receipt behavior
 - `CHANGELOG.md` — implementation history

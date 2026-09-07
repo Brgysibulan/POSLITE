@@ -6,6 +6,10 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Added
 
+- Native Android full-database `.pos` export and restore through the Android system file picker.
+- Backup preview showing product, sale, purchase, customer, expense, and export-date counts before destructive restore confirmation.
+- SQLite `draft_cart` persistence so an unfinished native sale recovers after app restart or process death.
+- Database migration from schema version 1 to 2 for existing Android installs.
 - Native portrait-first Sell layout with a full-width product browser and separate Material 3 cart/checkout bottom sheet.
 - Persistent cart count/total action on the Sell screen.
 - Android decimal keyboards and strict validation for money, quantity, cost, payment, discount, and stock fields.
@@ -13,7 +17,8 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Changed
 
-- Native development version advanced to `0.4.0-native-dev` with version code 2.
+- Native development version advanced to `0.5.0-native-dev` with version code 3.
+- Native restore replaces local operational data only after format/schema validation and explicit confirmation, inside one rollback-safe SQLite transaction.
 - Analytics 7/30/90/365-day windows now start at local midnight of the first included calendar day.
 - Purchase, product, stock adjustment, credit payment, expense, and checkout database boundaries now reject invalid values.
 
@@ -27,6 +32,7 @@ All notable SariPOS development changes are documented here. Historical entries 
 ### Preserved
 
 - Existing inventory conversion, weighted-average costing, COGS, credit-stock, package/database compatibility, and web-reference behavior.
+- Native backup format is intentionally separate from the existing web/PWA `.pos` schema; cross-platform import is not claimed in this release.
 
 ### Verified
 

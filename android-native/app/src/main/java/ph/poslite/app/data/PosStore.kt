@@ -4,6 +4,8 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlin.math.max
 
 data class UnitOption(
@@ -102,6 +104,15 @@ data class StoreSettings(
     val storeName: String = "POSlite Store",
     val owner: String = "",
     val address: String = ""
+)
+
+data class BackupPreview(
+    val products: Int,
+    val sales: Int,
+    val purchases: Int,
+    val customers: Int,
+    val expenses: Int,
+    val exportedAt: Long
 )
 
 class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
@@ -228,12 +239,66 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
                 value TEXT NOT NULL
             )""".trimIndent()
         )
+        createDraftCartTable(db)
         putSetting(db, "store_name", "POSlite Store")
         putSetting(db, "owner", "")
         putSetting(db, "address", "")
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) createDraftCartTable(db)
+    }
+
+    private fun createDraftCartTable(db: SQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS draft_cart(
+                product_id INTEGER NOT NULL,
+                unit_id INTEGER NOT NULL,
+                qty REAL NOT NULL,
+                PRIMARY KEY(product_id, unit_id),
+                FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE,
+                FOREIGN KEY(unit_id) REFERENCES product_units(id) ON DELETE CASCADE
+            )""".trimIndent()
+        )
+    }
+
+    fun saveDraftCart(lines: List<CartLine>) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            db.delete("draft_cart", null, null)
+            lines.filter { it.qty > 0 }.forEach { line ->
+                db.insertOrThrow("draft_cart", null, ContentValues().apply {
+                    put("product_id", line.product.id)
+                    put("unit_id", line.unit.id)
+                    put("qty", line.qty)
+                })
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun getDraftCart(): List<CartLine> {
+        val db = readableDatabase
+        val rows = mutableListOf<CartLine>()
+        db.rawQuery("SELECT product_id,unit_id,qty FROM draft_cart ORDER BY rowid", null).use { c ->
+            while (c.moveToNext()) {
+                val product = getProductRow(db, c.getLong(0)) ?: continue
+                val unit = getUnitRow(db, c.getLong(1)) ?: continue
+                val qty = c.getDouble(2)
+                if (qty > 0 && unit.productId == product.id && unit.qtyBase * qty <= product.stockBase + 0.0000001) {
+                    rows += CartLine(product, unit, qty)
+                }
+            }
+        }
+        return rows
+    }
+
+    fun clearDraftCart() {
+        writableDatabase.delete("draft_cart", null, null)
+    }
 
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
@@ -510,6 +575,7 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
                     put("reference", number)
                 })
             }
+            db.delete("draft_cart", null, null)
             db.setTransactionSuccessful()
             return SaleReceipt(saleId, number, now, finalCustomerName, paymentType, subtotal, safeDiscount, total, if (paymentType == "cash") cash else 0.0, change, receiptLines)
         } finally {
@@ -701,8 +767,117 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
         return cal.timeInMillis
     }
 
+    fun exportBackup(): String {
+        val db = readableDatabase
+        val tables = JSONObject()
+        BACKUP_TABLES.forEach { (table, columns) ->
+            val rows = JSONArray()
+            db.query(table, columns, null, null, null, null, null).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val row = JSONObject()
+                    columns.forEachIndexed { index, column ->
+                        when (cursor.getType(index)) {
+                            android.database.Cursor.FIELD_TYPE_NULL -> row.put(column, JSONObject.NULL)
+                            android.database.Cursor.FIELD_TYPE_INTEGER -> row.put(column, cursor.getLong(index))
+                            android.database.Cursor.FIELD_TYPE_FLOAT -> row.put(column, cursor.getDouble(index))
+                            android.database.Cursor.FIELD_TYPE_BLOB -> error("Hindi suportado ang binary database field sa backup.")
+                            else -> row.put(column, cursor.getString(index))
+                        }
+                    }
+                    rows.put(row)
+                }
+            }
+            tables.put(table, rows)
+        }
+        return JSONObject().apply {
+            put("format", BACKUP_FORMAT)
+            put("schemaVersion", BACKUP_SCHEMA)
+            put("appVersion", "0.5.0-native-dev")
+            put("exportedAt", System.currentTimeMillis())
+            put("tables", tables)
+        }.toString(2)
+    }
+
+    fun previewBackup(text: String): BackupPreview {
+        val root = parseBackup(text)
+        val tables = root.getJSONObject("tables")
+        return BackupPreview(
+            products = tables.getJSONArray("products").length(),
+            sales = tables.getJSONArray("sales").length(),
+            purchases = tables.getJSONArray("purchases").length(),
+            customers = tables.getJSONArray("customers").length(),
+            expenses = tables.getJSONArray("expenses").length(),
+            exportedAt = root.optLong("exportedAt")
+        )
+    }
+
+    fun restoreBackup(text: String) {
+        val root = parseBackup(text)
+        val tables = root.getJSONObject("tables")
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            BACKUP_DELETE_ORDER.forEach { db.delete(it, null, null) }
+            BACKUP_TABLES.forEach { (table, columns) ->
+                val rows = tables.getJSONArray(table)
+                for (index in 0 until rows.length()) {
+                    val row = rows.getJSONObject(index)
+                    val values = ContentValues()
+                    columns.forEach { column ->
+                        if (!row.has(column) || row.isNull(column)) {
+                            values.putNull(column)
+                        } else {
+                            when (val value = row.get(column)) {
+                                is Int -> values.put(column, value)
+                                is Long -> values.put(column, value)
+                                is Double -> values.put(column, value)
+                                is Boolean -> values.put(column, if (value) 1 else 0)
+                                else -> values.put(column, value.toString())
+                            }
+                        }
+                    }
+                    db.insertOrThrow(table, null, values)
+                }
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    private fun parseBackup(text: String): JSONObject {
+        val root = runCatching { JSONObject(text) }.getOrElse { error("Hindi mabasa ang .pos file.") }
+        require(root.optString("format") == BACKUP_FORMAT) { "Hindi ito SariPOS Android backup." }
+        require(root.optInt("schemaVersion") == BACKUP_SCHEMA) { "Hindi suportado ang backup version na ito." }
+        val tables = root.optJSONObject("tables") ?: error("Kulang ang backup data.")
+        BACKUP_TABLES.forEach { (table, _) -> require(tables.optJSONArray(table) != null) { "Kulang ang $table sa backup." } }
+        return root
+    }
+
     companion object {
         private const val DB_NAME = "poslite-native.db"
-        private const val DB_VERSION = 1
+        private const val DB_VERSION = 2
+        private const val BACKUP_FORMAT = "SariPOS-Android"
+        private const val BACKUP_SCHEMA = 1
+
+        private val BACKUP_TABLES = linkedMapOf(
+            "products" to arrayOf("id", "name", "category", "barcode", "base_unit", "stock_base", "low_stock_base", "avg_cost_base", "created_at", "updated_at"),
+            "product_units" to arrayOf("id", "product_id", "label", "qty_base", "sell_price", "sale_enabled", "purchase_enabled"),
+            "customers" to arrayOf("id", "name", "contact", "balance", "created_at", "updated_at"),
+            "sales" to arrayOf("id", "number", "created_at", "subtotal", "discount", "total", "payment_type", "customer_id", "customer_name", "cash", "change_amount"),
+            "sale_items" to arrayOf("id", "sale_id", "product_id", "product_name", "unit_label", "qty", "qty_base", "unit_price", "cost_base", "amount"),
+            "purchases" to arrayOf("id", "number", "supplier", "created_at", "total_cost"),
+            "purchase_items" to arrayOf("id", "purchase_id", "product_id", "unit_label", "qty", "qty_base", "total_cost"),
+            "stock_movements" to arrayOf("id", "product_id", "movement_type", "qty_base", "created_at", "reference", "note", "cost_base"),
+            "credit_ledger" to arrayOf("id", "customer_id", "entry_type", "amount", "created_at", "reference"),
+            "expenses" to arrayOf("id", "created_at", "category", "description", "amount"),
+            "settings" to arrayOf("key", "value"),
+            "draft_cart" to arrayOf("product_id", "unit_id", "qty")
+        )
+
+        private val BACKUP_DELETE_ORDER = listOf(
+            "draft_cart", "credit_ledger", "sale_items", "purchase_items", "stock_movements",
+            "sales", "purchases", "expenses", "product_units", "customers", "products", "settings"
+        )
     }
 }

@@ -50,5 +50,6 @@ jobs:
           test -f docs/RECEIPTS.md
           test -f docs/CASH-LOANS.md
           test -f docs/CUSTOMIZATION.md
+          test -f docs/BACKUP-RESTORE.md
           test -f docs/PATCH-NOTES.md
           test -f CHANGELOG.md

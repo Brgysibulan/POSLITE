@@ -11,7 +11,17 @@ POSlite now has a native Android implementation under `android-native/`. The exi
 
 A newer Android receipt fix is being validated after a real-device report that the old PDF/print action could close the app.
 
-Current development track: **`0.4.0-native-dev` / version code 2**. The 2026-09-07 portrait checkout hardening passed GitHub Actions build #20 at commit `31a2706b1c11e1c6a7b796a6b6777f7a3202564b`; real-device verification is next.
+Current development track: **`0.5.0-native-dev` / version code 3**. This track adds native data backup/restore and draft-cart recovery. The earlier 2026-09-07 portrait checkout hardening passed GitHub Actions build #20 at commit `31a2706b1c11e1c6a7b796a6b6777f7a3202564b`; the new data-safety build is pending verification.
+
+## Data safety foundation — 2026-09-07
+
+- Full native SQLite export to a user-selected `.pos` document.
+- Format/schema validation and record-count preview before restore.
+- Explicit confirmation because restore replaces current local data.
+- Transactional restore with rollback on failure.
+- Draft-cart persistence and recovery after restart/process death.
+- Non-destructive database migration from version 1 to 2.
+- Native format is `SariPOS-Android` schema 1; web/PWA `.pos` cross-import is not yet supported.
 
 ## Portrait checkout hardening — 2026-09-07
 
@@ -268,7 +278,7 @@ This allows continued GitHub Pages testing, side-by-side behavior comparison, an
 - verify JPG is visible in Pictures/SariPOS on Android 10+
 - verify Share JPG to common Android apps
 - change any remaining legacy UI wording from PDF/Print to JPG-only wording
-- add `.pos` Android import/export compatibility
+- add explicit conversion between native `SariPOS-Android` and web/PWA `POSlite` `.pos` formats
 - add product QR label generation
 - fully bundled offline CameraX + ML Kit scanner if required
 - direct Bluetooth thermal-printer integration later

@@ -1,6 +1,48 @@
 # SariPOS Patch Notes
 
-## Latest patch — Native Android Portrait Checkout Hardening
+## Latest patch — Native Android Data Safety Foundation
+
+**Date:** 2026-09-07
+**Track:** `0.5.0-native-dev`
+**Status:** Source complete / GitHub Actions and real-device verification pending
+
+### Added
+
+- Full native Android `.pos` backup export using the Android system file picker.
+- Restore picker with backup validation and a preview of product, sale, purchase, customer, expense, and export-date totals.
+- Explicit destructive confirmation before replacing local data.
+- Atomic SQLite restore: failed validation or insertion rolls the transaction back and preserves the previous database.
+- Persistent draft cart storage so unfinished cart lines recover after app restart or Android process death.
+- SQLite schema migration from database version 1 to 2 without recreating existing transaction tables.
+- Dedicated backup/restore behavior and test checklist in `docs/BACKUP-RESTORE.md`.
+
+### Changed
+
+- Native Android development build advanced to `0.5.0-native-dev` / version code 3.
+- Successful checkout now clears both the visible cart and its saved draft.
+- Settings now explains that restore replaces the current phone data and recommends a backup before changing/resetting a phone.
+
+### Data-format decision
+
+- Native backup format: `SariPOS-Android`, schema version 1.
+- The backup includes every current native operational table plus the unfinished draft cart.
+- This release does not claim compatibility with web/PWA `POSlite` schema 1/2 `.pos` files. Cross-platform conversion remains separate work.
+
+### Preserved
+
+- Weighted-average inventory cost, base-unit conversions, saved sale-item COGS, immediate stock deduction for credit sales, existing package name, and existing SQLite filename.
+
+### Verification checklist
+
+- GitHub Actions Android compile/build: pending this commit.
+- Export a populated store, inspect the file, alter local data, restore, and compare all module totals.
+- Force-stop with a non-empty cart, reopen, and confirm valid cart lines recover.
+- Try a malformed, incomplete, web-format, and unsupported-schema backup; current data must remain unchanged.
+- Upgrade an existing version-code-2 install and confirm old products and transactions remain available.
+
+---
+
+## Previous patch — Native Android Portrait Checkout Hardening
 
 **Date:** 2026-09-07
 **Track:** `0.4.0-native-dev`

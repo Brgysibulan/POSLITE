@@ -2,6 +2,8 @@ package ph.poslite.app
 
 import android.content.Context
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import ph.poslite.app.data.AnalyticsSummary
+import ph.poslite.app.data.BackupPreview
 import ph.poslite.app.data.CartLine
 import ph.poslite.app.data.Customer
 import ph.poslite.app.data.DashboardStats
@@ -112,7 +115,11 @@ private class PosController(context: Context) {
     val cart = mutableStateListOf<CartLine>()
     var activeReceipt by mutableStateOf<SaleReceipt?>(null)
 
-    init { refresh() }
+    init {
+        refresh()
+        cart += store.getDraftCart()
+        store.saveDraftCart(cart.toList())
+    }
 
     fun refresh() {
         products = store.getProducts()
@@ -144,6 +151,7 @@ private class PosController(context: Context) {
         } else {
             cart += CartLine(product, unit, 1.0)
         }
+        store.saveDraftCart(cart.toList())
     }
 
     fun changeCartQty(index: Int, delta: Double) {
@@ -151,11 +159,13 @@ private class PosController(context: Context) {
         val next = max(0.0, line.qty + delta)
         if (next <= 0.000001) {
             cart.removeAt(index)
+            store.saveDraftCart(cart.toList())
             return
         }
         val otherBase = cart.filterIndexed { i, it -> i != index && it.product.id == line.product.id }.sumOf { it.qtyBase }
         if (otherBase + line.unit.qtyBase * next > line.product.stockBase + 0.0000001) error("Hindi sapat ang stock.")
         cart[index] = line.copy(qty = next)
+        store.saveDraftCart(cart.toList())
     }
 
     fun checkout(discount: Double, paymentType: String, customerId: Long?, customerName: String, cash: Double) {
@@ -848,6 +858,38 @@ private fun SettingsScreen(c: PosController, back: () -> Unit) {
     var storeName by remember(c.settings) { mutableStateOf(c.settings.storeName) }
     var owner by remember(c.settings) { mutableStateOf(c.settings.owner) }
     var address by remember(c.settings) { mutableStateOf(c.settings.address) }
+    var pendingBackupText by remember { mutableStateOf<String?>(null) }
+    var pendingBackupPreview by remember { mutableStateOf<BackupPreview?>(null) }
+    val exportBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                val output = context.contentResolver.openOutputStream(uri)
+                    ?: error("Hindi mabuksan ang napiling file.")
+                output.bufferedWriter().use { it.write(c.store.exportBackup()) }
+            }.onSuccess {
+                Toast.makeText(context, "Naka-save ang backup.", Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                Toast.makeText(context, it.message ?: "Hindi ma-save ang backup.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    val importBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            runCatching {
+                val input = context.contentResolver.openInputStream(uri)
+                    ?: error("Hindi mabuksan ang napiling file.")
+                val text = input.bufferedReader().use { it.readText() }
+                text to c.store.previewBackup(text)
+            }.onSuccess { (text, preview) ->
+                pendingBackupText = text
+                pendingBackupPreview = preview
+            }.onFailure {
+                Toast.makeText(context, it.message ?: "Hindi ma-read ang backup.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Header("Ayos ng App", "Tindahan at impormasyon ng SariPOS", back)
         Column(Modifier.padding(16.dp)) {
@@ -856,6 +898,25 @@ private fun SettingsScreen(c: PosController, back: () -> Unit) {
             OutlinedTextField(address, { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
             Button(onClick = { c.store.saveSettings(StoreSettings(storeName, owner, address)); c.refresh(); Toast.makeText(context, "Naka-save ang settings.", Toast.LENGTH_SHORT).show() }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("I-save") }
             Text("Ang operational data ay naka-save locally sa Android phone.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 12.dp))
+
+            Card(Modifier.fillMaxWidth().padding(top = 18.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Backup at Restore", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("I-save ang buong local database sa isang .pos file. Ang restore ay papalit sa kasalukuyang data sa phone.")
+                    Button(
+                        onClick = {
+                            val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                            exportBackup.launch("SariPOS-backup-$date.pos")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("I-export ang .pos Backup") }
+                    OutlinedButton(
+                        onClick = { importBackup.launch(arrayOf("application/octet-stream", "application/json", "text/plain", "*/*")) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Mag-restore mula sa .pos") }
+                    Text("Tip: Mag-backup bago magpalit o mag-reset ng phone.", style = MaterialTheme.typography.bodySmall)
+                }
+            }
 
             Card(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 24.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -869,6 +930,45 @@ private fun SettingsScreen(c: PosController, back: () -> Unit) {
                 }
             }
         }
+    }
+
+    val preview = pendingBackupPreview
+    val backupText = pendingBackupText
+    if (preview != null && backupText != null) {
+        AlertDialog(
+            onDismissRequest = { pendingBackupText = null; pendingBackupPreview = null },
+            title = { Text("I-restore ang backup?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Papalitan nito ang lahat ng kasalukuyang local data.")
+                    Text("Paninda: ${preview.products}")
+                    Text("Benta: ${preview.sales}")
+                    Text("Kumprada: ${preview.purchases}")
+                    Text("Customers: ${preview.customers}")
+                    Text("Gastos: ${preview.expenses}")
+                    if (preview.exportedAt > 0) Text("Ginawa: ${fmtDate(preview.exportedAt)}")
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    runCatching {
+                        c.store.restoreBackup(backupText)
+                        c.cart.clear()
+                        c.refresh()
+                        c.cart += c.store.getDraftCart()
+                    }.onSuccess {
+                        pendingBackupText = null
+                        pendingBackupPreview = null
+                        Toast.makeText(context, "Kumpleto ang restore.", Toast.LENGTH_SHORT).show()
+                    }.onFailure {
+                        Toast.makeText(context, it.message ?: "Hindi ma-restore ang backup.", Toast.LENGTH_LONG).show()
+                    }
+                }) { Text("Palitan at I-restore") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingBackupText = null; pendingBackupPreview = null }) { Text("Kanselahin") }
+            }
+        )
     }
 }
 
