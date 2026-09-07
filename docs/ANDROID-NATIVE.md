@@ -11,7 +11,7 @@ POSlite now has a native Android implementation under `android-native/`. The exi
 
 A newer Android receipt fix is being validated after a real-device report that the old PDF/print action could close the app.
 
-Current development track: **`0.8.0-native-dev` / version code 6**. This track adds editable native button/navigation terms and a white-S/black-background Android logo. The preceding operational-controls track passed GitHub Actions native build #23 at commit `c62c7bf3a7bbe454e2a0b9010dd720f0495d4b3c`; the customization build is pending verification.
+Current development track: **`0.8.0-native-dev` / version code 6**. This track adds editable native button/navigation terms and a white-S/black-background Android logo. GitHub Actions native build #24 passed at commit `5c18fb2f4d33f40697bd4606c332452b67de9aa0`; real-device verification is next.
 
 ## Editable terminology and launcher branding — 2026-09-07
 

@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-07
 **Track:** `0.8.0-native-dev`
-**Status:** Source complete / GitHub Actions and real-device verification pending
+**Status:** GitHub Actions build successful / real-device verification pending
 
 ### Added
 
@@ -25,7 +25,11 @@
 
 ### Verification checklist
 
-- GitHub Actions Android build: pending.
+- GitHub Actions `Build SariPOS Native Android` run #24 passed at commit `5c18fb2f4d33f40697bd4606c332452b67de9aa0`.
+- Run ID: `34168804190`.
+- Artifact: `SariPOS-native-debug` (`10035046829`).
+- Artifact ZIP digest: `sha256:8a9be7087bc671126c3b44336442db2a689fc73695a605a99ad5e61f2293957f`.
+- Web/document validation run #119 passed.
 - Install over v0.7.0 and confirm current operational data remains intact.
 - Switch to English, save, and verify bottom navigation, More menu, screen headings, Back, New Sale, and Purchase shortcut.
 - Edit each label manually, force-stop/reopen, and verify persistence.

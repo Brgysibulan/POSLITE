@@ -17,6 +17,7 @@
 **Verified native data-safety baseline:** `4e5ea36b849b954155c08646b55d789667470804` — build #21 SUCCESS
 **Verified native transaction-lifecycle baseline:** `69df5615b2f7eebaa68efbd7c8b724464129d8e9` — build #22 SUCCESS
 **Verified native operational-controls baseline:** `c62c7bf3a7bbe454e2a0b9010dd720f0495d4b3c` — build #23 SUCCESS
+**Verified native terminology/logo baseline:** `5c18fb2f4d33f40697bd4606c332452b67de9aa0` — build #24 SUCCESS
 
 ## Mandatory project rule
 

@@ -2,7 +2,7 @@
 
 ## Native Android terminology — v0.8.0-native-dev
 
-Native Android **Ayos ng App** now includes **Editable Button & Translation Terms**. The owner can edit fourteen principal labels individually or load one of two presets:
+Native Android **Ayos ng App** now includes **Editable Button & Translation Terms**. This source passed GitHub Actions native build #24 at commit `5c18fb2f4d33f40697bd4606c332452b67de9aa0`. The owner can edit fourteen principal labels individually or load one of two presets:
 
 - **Sari-sari Terms** — Benta, Paninda, Iba Pa, Kumprada / Stock In, Stock ng Paninda, Utang, Gastos, Kita at Tubo, Resibo / Talaan, and related actions.
 - **English Terms** — Sell, Products, More, Purchases / Stock In, Inventory, Credit, Expenses, Analytics & Profit, Receipts / Reports, and related actions.
