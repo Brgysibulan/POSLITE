@@ -19,6 +19,7 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Fixed
 
+- Added the required Material 3 experimental API opt-in identified by the first portrait-checkout CI compile.
 - Corrected the pre-Android-10 receipt FileProvider path from the legacy `Pictures/POSlite` folder to `Pictures/SariPOS`.
 - Stock removal no longer silently clamps an excessive deduction to zero.
 - Invalid numeric form text is no longer silently saved as zero in the hardened Android transaction paths.

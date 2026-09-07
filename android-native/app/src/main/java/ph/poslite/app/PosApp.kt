@@ -25,6 +25,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -263,6 +264,7 @@ private fun HomeScreen(c: PosController, onSell: () -> Unit, onPurchases: () -> 
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun SellScreen(c: PosController) {
     val context = LocalContext.current
     val scanner = remember { GmsBarcodeScanning.getClient(context) }

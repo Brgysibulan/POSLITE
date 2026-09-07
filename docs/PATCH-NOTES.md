@@ -25,6 +25,7 @@
 
 ### Fixed
 
+- Added the required Material 3 experimental API opt-in after build #19 correctly rejected the new bottom-sheet call during Kotlin compilation.
 - Fixed the older-Android receipt FileProvider mismatch: receipt code writes to `Pictures/SariPOS`, and the allowed provider path now points to the same folder instead of the legacy `Pictures/POSlite` folder.
 - Stock removal now rejects a quantity greater than available stock instead of silently clamping stock to zero.
 - Purchase records now require positive quantity and purchase cost.
