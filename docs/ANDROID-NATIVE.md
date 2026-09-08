@@ -11,7 +11,9 @@ POSlite now has a native Android implementation under `android-native/`. The exi
 
 A newer Android receipt fix is being validated after a real-device report that the old PDF/print action could close the app.
 
-Current development track: **`0.9.0-native-dev` / version code 7**. This track adds optional Supabase Google/Facebook login, administrator-approved plans, atomic device limits, signed offline licensing, and private validated cloud backup. Source/CI verification and production Supabase deployment are required before release promotion. Build #24 remains the latest verified installable baseline until this track passes.
+Current development track: **`0.9.0-native-dev` / version code 7**. This track adds optional Supabase Google/Facebook login, administrator-approved plans, atomic device limits, signed offline licensing, and private validated cloud backup. GitHub Actions Android build #27 passed at feature-branch commit `c05bc51a391b3692a9caf3903ac76134adc795f9`. Production Supabase deployment and real-device acceptance are still required before release promotion.
+
+Build #27 artifact: `SariPOS-native-debug` (`10036871716`), ZIP digest `sha256:6576f72d062747208de44a3df0d3ad67b07806e2b4478e82d4f0a57f43d6118c`. It was compiled with empty cloud settings, so it validates the code/build but runs in development/offline mode rather than enforcing customer accounts.
 
 ## Cloud access track — 2026-09-08
 

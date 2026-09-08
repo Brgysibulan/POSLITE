@@ -8,11 +8,13 @@ SariPOS is a native Android, offline-first point-of-sale and inventory app for s
 - **Native Android development:** v0.9.0-native-dev under `android-native/`
 - **Primary product direction:** Android smartphone-first
 - **First verified native APK baseline:** commit `9f4acb298eb71cb13da5dcb863c1749acca50507`
-- **Latest verified native baseline:** build #24 — SUCCESS
-- **Verified terminology/logo commit:** `5c18fb2f4d33f40697bd4606c332452b67de9aa0`
+- **Latest verified native baseline:** build #27 — SUCCESS on the account/licensing feature branch
+- **Verified cloud source commit:** `c05bc51a391b3692a9caf3903ac76134adc795f9`
 - **APK artifact:** `SariPOS-native-debug`
 
 The existing web/PWA application remains the stable workflow reference while the native Android implementation is tested on real devices. The Android app is a real Kotlin/Jetpack Compose application, not a WebView wrapper.
+
+Build #27 verifies that the `0.9.0-native-dev` source assembles. Its artifact was built without production Supabase secrets and therefore remains development/offline mode; it is not the final account-enforced customer APK.
 
 ## Native Android stack
 

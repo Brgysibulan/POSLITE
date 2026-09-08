@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-08
 **Track:** `0.9.0-native-dev` / version code 7
-**Status:** Source implementation complete; CI build, dedicated Supabase deployment, OAuth setup, and real-device acceptance are still required
+**Status:** GitHub Actions source build successful; dedicated Supabase deployment, OAuth setup, configured customer APK, and real-device acceptance are still required
 
 ### Added
 
@@ -27,7 +27,10 @@
 
 ### Release gate
 
-- Run both GitHub Actions workflows and obtain the new APK artifact.
+- GitHub Actions Android build #27 passed at commit `c05bc51a391b3692a9caf3903ac76134adc795f9`.
+- Development artifact: `SariPOS-native-debug` (`10036871716`), ZIP digest `sha256:6576f72d062747208de44a3df0d3ad67b07806e2b4478e82d4f0a57f43d6118c`.
+- Web/document validation #123 passed.
+- The build #27 artifact used empty cloud settings and is not the final account-enforced APK.
 - Configure a dedicated Supabase project, Google/Facebook providers, redirect URL, signing secret, schema, bucket, and functions.
 - Test pending approval, one-device rejection, replacement after revoke, expiry/suspension, offline expiration, package overrides, cross-account backup denial, invalid file rejection, and restore checksum failure.
 

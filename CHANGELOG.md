@@ -63,6 +63,8 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Verified
 
+- Native Android build #27 succeeded on the cloud-account feature branch at commit `c05bc51a391b3692a9caf3903ac76134adc795f9`; artifact `SariPOS-native-debug` (`10036871716`), ZIP digest `sha256:6576f72d062747208de44a3df0d3ad67b07806e2b4478e82d4f0a57f43d6118c`. This artifact used empty cloud settings and remains development/offline mode.
+- Web/document validation #123 succeeded for the same feature-branch commit.
 - Native Android build #24 succeeded at commit `5c18fb2f4d33f40697bd4606c332452b67de9aa0` with artifact `SariPOS-native-debug` (`10035046829`).
 - Web/document validation run #119 succeeded for the terminology/logo source commit.
 - Native Android build #23 succeeded at commit `c62c7bf3a7bbe454e2a0b9010dd720f0495d4b3c` with artifact `SariPOS-native-debug` (`10018058640`).
