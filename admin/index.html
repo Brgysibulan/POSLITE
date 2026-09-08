@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>SariPOS License Admin</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo" aria-hidden="true">S</div>
+    <div><strong>SariPOS</strong><small>License Administrator</small></div>
+    <button id="signOutButton" class="ghost hidden" type="button">Sign out</button>
+  </header>
+  <main>
+    <section id="setupCard" class="panel">
+      <h1>Connect Supabase</h1>
+      <p>Publishable key lamang ang ilagay rito. Huwag kailanman ilagay ang secret/service-role key.</p>
+      <label>Project URL<input id="projectUrl" type="url" placeholder="https://project-ref.supabase.co" autocomplete="off"></label>
+      <label>Publishable key<input id="publishableKey" type="password" placeholder="sb_publishable_..." autocomplete="off"></label>
+      <button id="saveConfigButton" type="button">Save connection</button>
+    </section>
+
+    <section id="loginCard" class="panel hidden">
+      <h1>Administrator login</h1>
+      <p>Only an active account with the protected <code>admin</code> role can load customer licenses.</p>
+      <button id="googleLoginButton" type="button">Continue with Google</button>
+      <button id="changeConfigButton" class="ghost" type="button">Change connection</button>
+    </section>
+
+    <section id="dashboard" class="hidden">
+      <div class="summary">
+        <article><span>Pending accounts</span><strong id="pendingCount">0</strong></article>
+        <article><span>Licenses</span><strong id="licenseCount">0</strong></article>
+        <article><span>Active devices</span><strong id="deviceCount">0</strong></article>
+      </div>
+      <div id="notice" role="status"></div>
+
+      <section class="panel">
+        <div class="section-title"><div><h2>Pending accounts</h2><p>Set the package, validity and limits before activation.</p></div><button id="refreshButton" class="ghost" type="button">Refresh</button></div>
+        <div id="pendingAccounts" class="cards"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Licenses</h2>
+        <div class="table-wrap"><table><thead><tr><th>Store</th><th>Plan</th><th>Status</th><th>Expiry</th><th>Devices</th><th>Actions</th></tr></thead><tbody id="licensesBody"></tbody></table></div>
+      </section>
+
+      <section class="panel">
+        <h2>Registered devices</h2>
+        <div class="table-wrap"><table><thead><tr><th>Device</th><th>Status</th><th>Last online</th><th>Action</th></tr></thead><tbody id="devicesBody"></tbody></table></div>
+      </section>
+    </section>
+  </main>
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 package ph.poslite.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,18 +12,35 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import ph.poslite.app.data.PosStore
 import ph.poslite.app.data.StoreSettings
+import ph.poslite.app.cloud.SariPosCloud
+import io.github.jan.supabase.auth.handleDeeplinks
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         migrateLegacyDefaultStoreName()
+        handleCloudAuthIntent(intent)
 
         setContent {
             SariPOSTheme {
                 PosApp()
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleCloudAuthIntent(intent)
+    }
+
+    private fun handleCloudAuthIntent(intent: Intent) {
+        SariPosCloud.client?.handleDeeplinks(
+            intent,
+            onSessionSuccess = { SariPosCloud.events.tryEmit(Unit) },
+            onError = { SariPosCloud.events.tryEmit(Unit) }
+        )
     }
 
     private fun migrateLegacyDefaultStoreName() {

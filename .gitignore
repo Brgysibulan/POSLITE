@@ -1,0 +1,13 @@
+android-native/local.properties
+android-native/.gradle/
+android-native/app/build/
+android-native/build/
+.idea/
+*.jks
+*.keystore
+*.pem
+saripos-license-public.base64
+supabase/.temp/
+supabase/functions/.env
+cloud-config.js
+admin/cloud-config.js

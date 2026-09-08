@@ -1,0 +1,15 @@
+project_id = "saripos"
+
+[auth]
+site_url = "saripos://auth/callback"
+additional_redirect_urls = ["saripos://auth/callback"]
+
+[functions.license-status]
+verify_jwt = true
+
+[functions.backups]
+verify_jwt = true
+
+[functions.admin-license]
+verify_jwt = true
+

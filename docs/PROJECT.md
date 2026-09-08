@@ -7,7 +7,7 @@
 **Repository:** `Brgysibulan/POSLITE` (kept for compatibility; not renamed yet)  
 **Current phase:** Native Android development + Android-first web workflow validation  
 **Web reference version:** v0.2.0 plus documented development modules  
-**Native Android development version:** v0.8.0-native-dev
+**Native Android development version:** v0.9.0-native-dev
 **Primary platform:** Android smartphone  
 **First verified native APK baseline:** `9f4acb298eb71cb13da5dcb863c1749acca50507` — build #8 SUCCESS  
 **Verified native JPG-receipt hotfix baseline:** `8b0ea16b79a073aeed1b43bfdaf9fd335e08e631` — build #12 SUCCESS  
@@ -104,6 +104,14 @@ Technology:
 - minimum SDK 26
 
 Native database file: `poslite-native.db`
+
+## Cloud account and license foundation — 2026-09-08
+
+The optional configured build uses Supabase Auth for Google/Facebook login and server-controlled licenses. New social accounts remain pending until an administrator assigns a store and plan. Plans and per-store overrides control validity, active-device count, signed offline allowance, feature access, backup count, and retention. Device claiming occurs inside a locked PostgreSQL function so simultaneous activations cannot exceed the purchased allowance.
+
+The offline license is RSA-signed on the server, bound to the account/store/device, verified in Android, and encrypted at rest with Android Keystore. Private keys and Supabase secret/service-role keys never belong in the APK or browser dashboard.
+
+Cloud backup accepts only validated `SariPOS-Android` database JSON through an Edge Function. It is not a general file-upload folder. Storage paths are server-generated beneath the authenticated user and store, the bucket is private, and downloads are revalidated and checksum-checked. See `docs/CLOUD-AUTH-LICENSING.md`.
 
 Tables:
 

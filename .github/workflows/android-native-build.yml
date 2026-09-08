@@ -42,6 +42,10 @@ jobs:
           gradle-version: '9.6.0'
 
       - name: Build debug APK
+        env:
+          SUPABASE_URL: ${{ secrets.SARIPOS_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SARIPOS_SUPABASE_PUBLISHABLE_KEY }}
+          SARIPOS_LICENSE_PUBLIC_KEY: ${{ secrets.SARIPOS_LICENSE_PUBLIC_KEY }}
         run: gradle -p android-native :app:assembleDebug --stacktrace
 
       - name: Upload debug APK
