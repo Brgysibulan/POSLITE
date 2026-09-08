@@ -1,12 +1,13 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-val localProperties = java.util.Properties().apply {
-    rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use(::load)
-}
+val localProperties = Properties()
+rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use { localProperties.load(it) }
 
 fun cloudSetting(name: String): String =
     providers.environmentVariable(name).orNull ?: localProperties.getProperty(name, "")
