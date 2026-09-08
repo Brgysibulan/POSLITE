@@ -25,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,11 +41,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
@@ -57,6 +60,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import kotlinx.coroutines.launch
+import ph.poslite.app.cloud.CloudAccessState
+import ph.poslite.app.cloud.CloudController
+import ph.poslite.app.cloud.LoginProvider
+import ph.poslite.app.cloud.SariPosCloud
 import ph.poslite.app.data.AnalyticsSummary
 import ph.poslite.app.data.BackupPreview
 import ph.poslite.app.data.CartLine
@@ -189,6 +197,24 @@ private class PosController(context: Context) {
 fun PosApp() {
     val context = LocalContext.current
     val controller = remember { PosController(context) }
+    val cloud = remember { CloudController(context) }
+
+    LaunchedEffect(Unit) { cloud.initialize() }
+    LaunchedEffect(Unit) {
+        SariPosCloud.events.collect { cloud.initialize() }
+    }
+
+    val cloudState = cloud.state
+    if (SariPosCloud.enforcementEnabled && cloudState !is CloudAccessState.Active) {
+        CloudGateScreen(cloud)
+        return
+    }
+
+    PosMainApp(controller, cloud)
+}
+
+@Composable
+private fun PosMainApp(controller: PosController, cloud: CloudController) {
     var screen by remember { mutableStateOf(Screen.HOME) }
     val moreSelected = screen !in listOf(Screen.HOME, Screen.SELL, Screen.PRODUCTS)
 
@@ -217,13 +243,58 @@ fun PosApp() {
                 Screen.ANALYTICS -> AnalyticsScreen(controller) { screen = Screen.MORE }
                 Screen.CASH_CLOSING -> CashClosingScreen(controller) { screen = Screen.MORE }
                 Screen.REPORTS -> ReportsScreen(controller) { screen = Screen.MORE }
-                Screen.SETTINGS -> SettingsScreen(controller) { screen = Screen.MORE }
+                Screen.SETTINGS -> SettingsScreen(controller, cloud) { screen = Screen.MORE }
             }
         }
     }
 
         controller.activeReceipt?.let { receipt ->
             ReceiptDialog(receipt, controller.settings, onDismiss = { controller.activeReceipt = null })
+        }
+    }
+}
+
+@Composable
+private fun CloudGateScreen(cloud: CloudController) {
+    val scope = rememberCoroutineScope()
+    val state = cloud.state
+    Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Card(colors = CardDefaults.cardColors(containerColor = Color.Black)) {
+                    Box(Modifier.width(64.dp).height(64.dp), contentAlignment = Alignment.Center) {
+                        Text("S", color = Color.White, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black)
+                    }
+                }
+                Text("SariPOS", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("Mag-login para ma-verify ang iyong account, package, validity at allowed devices.", style = MaterialTheme.typography.bodyMedium)
+                when (state) {
+                    CloudAccessState.Checking -> {
+                        CircularProgressIndicator()
+                        Text("Tinitingnan ang account at license…")
+                    }
+                    CloudAccessState.SignedOut -> {
+                        Button(onClick = { scope.launch { cloud.signIn(LoginProvider.GOOGLE) } }, enabled = !cloud.working, modifier = Modifier.fillMaxWidth()) {
+                            Text("Continue with Google")
+                        }
+                        OutlinedButton(onClick = { scope.launch { cloud.signIn(LoginProvider.FACEBOOK) } }, enabled = !cloud.working, modifier = Modifier.fillMaxWidth()) {
+                            Text("Continue with Facebook")
+                        }
+                        Text("Hindi kinukuha o sine-save ng SariPOS ang Google/Facebook password.", style = MaterialTheme.typography.bodySmall)
+                    }
+                    is CloudAccessState.Blocked -> {
+                        Text(state.reason, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                        OutlinedButton(onClick = { scope.launch { cloud.refreshLicense() } }, enabled = !cloud.working) { Text("Subukan ulit") }
+                        TextButton(onClick = { scope.launch { cloud.signOut() } }, enabled = !cloud.working) { Text("Gumamit ng ibang account") }
+                    }
+                    is CloudAccessState.Error -> {
+                        Text(state.message, color = MaterialTheme.colorScheme.error)
+                        OutlinedButton(onClick = { scope.launch { cloud.initialize() } }, enabled = !cloud.working) { Text("Subukan ulit") }
+                        TextButton(onClick = { scope.launch { cloud.signOut() } }, enabled = !cloud.working) { Text("Mag-login ulit") }
+                    }
+                    CloudAccessState.Disabled, is CloudAccessState.Active -> Unit
+                }
+            }
         }
     }
 }
@@ -1043,8 +1114,9 @@ private fun VoidSaleDialog(c: PosController, receipt: SaleReceipt, dismiss: () -
 }
 
 @Composable
-private fun SettingsScreen(c: PosController, back: () -> Unit) {
+private fun SettingsScreen(c: PosController, cloud: CloudController, back: () -> Unit) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val terms = LocalUiTerms.current
     var storeName by remember(c.settings) { mutableStateOf(c.settings.storeName) }
     var owner by remember(c.settings) { mutableStateOf(c.settings.owner) }
@@ -1052,6 +1124,11 @@ private fun SettingsScreen(c: PosController, back: () -> Unit) {
     var termDraft by remember(c.terms) { mutableStateOf(c.terms) }
     var pendingBackupText by remember { mutableStateOf<String?>(null) }
     var pendingBackupPreview by remember { mutableStateOf<BackupPreview?>(null) }
+    var pendingCloudDeleteId by remember { mutableStateOf<String?>(null) }
+    val cloudState = cloud.state
+    LaunchedEffect((cloudState as? CloudAccessState.Active)?.license?.storeId) {
+        if (cloudState is CloudAccessState.Active && !cloudState.offline) cloud.loadBackups()
+    }
     val exportBackup = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri ->
@@ -1138,10 +1215,77 @@ private fun SettingsScreen(c: PosController, back: () -> Unit) {
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("I-export ang .pos Backup") }
                     OutlinedButton(
-                        onClick = { importBackup.launch(arrayOf("application/octet-stream", "application/json", "text/plain", "*/*")) },
+                        onClick = { importBackup.launch(arrayOf("application/octet-stream", "application/json", "text/plain")) },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("Mag-restore mula sa .pos") }
                     Text("Tip: Mag-backup bago magpalit o mag-reset ng phone.", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
+            if (SariPosCloud.configured && cloudState is CloudAccessState.Active) {
+                val license = cloudState.license
+                Card(Modifier.fillMaxWidth().padding(top = 18.dp)) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("SariPOS Account at Cloud Backup", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(license.storeName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        if (cloud.accountEmail.isNotBlank()) Text(cloud.accountEmail)
+                        Text("Package: ${license.planCode} · Device limit: ${license.maxDevices}")
+                        license.licenseExpiresAt?.let { Text("Valid hanggang: ${fmtDate(it * 1000)}") }
+                        if (cloudState.offline) Text("Offline license mode", color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold)
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = { scope.launch { cloud.refreshLicense() } }, enabled = !cloud.working, modifier = Modifier.weight(1f)) { Text("Refresh License") }
+                            TextButton(onClick = { scope.launch { cloud.signOut() } }, enabled = !cloud.working, modifier = Modifier.weight(1f)) { Text("Sign Out") }
+                        }
+
+                        HorizontalDivider()
+                        Text("Cloud Backup", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Backup data lang na ginawa ng SariPOS ang tinatanggap. Walang general file upload.", style = MaterialTheme.typography.bodySmall)
+                        if (license.features["cloud_backup"] == true) {
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        cloud.uploadBackup(c.store.exportBackup())
+                                            .onSuccess { Toast.makeText(context, "Naka-save ang secure cloud backup.", Toast.LENGTH_SHORT).show() }
+                                            .onFailure { Toast.makeText(context, it.message ?: "Hindi ma-upload ang backup.", Toast.LENGTH_LONG).show() }
+                                    }
+                                },
+                                enabled = !cloud.working && !cloudState.offline,
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text(if (cloud.working) "Pinoproseso…" else "Backup Now") }
+                            if (cloudState.offline) Text("Mag-online para gumawa o mag-restore ng cloud backup.", style = MaterialTheme.typography.bodySmall)
+                            cloud.backups.forEach { backup ->
+                                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(if (backup.kind == "automatic") "Automatic Backup" else "Manual Backup", fontWeight = FontWeight.Bold)
+                                        Text("${backup.createdAt.take(19).replace('T', ' ')} · ${backup.sizeBytes / 1024} KB", style = MaterialTheme.typography.bodySmall)
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            TextButton(
+                                                onClick = {
+                                                    scope.launch {
+                                                        cloud.downloadBackup(backup.id)
+                                                            .onSuccess { text ->
+                                                                runCatching { c.store.previewBackup(text) }
+                                                                    .onSuccess { preview -> pendingBackupText = text; pendingBackupPreview = preview }
+                                                                    .onFailure { Toast.makeText(context, it.message ?: "Invalid backup.", Toast.LENGTH_LONG).show() }
+                                                            }
+                                                            .onFailure { Toast.makeText(context, it.message ?: "Hindi ma-download ang backup.", Toast.LENGTH_LONG).show() }
+                                                    }
+                                                },
+                                                enabled = !cloud.working
+                                            ) { Text("Restore") }
+                                            TextButton(
+                                                onClick = { pendingCloudDeleteId = backup.id },
+                                                enabled = !cloud.working
+                                            ) { Text("Delete") }
+                                        }
+                                    }
+                                }
+                            }
+                            OutlinedButton(onClick = { scope.launch { cloud.loadBackups() } }, enabled = !cloud.working && !cloudState.offline, modifier = Modifier.fillMaxWidth()) { Text("Refresh Backup List") }
+                        } else {
+                            Text("Hindi kasama ang cloud backup sa kasalukuyang package.")
+                        }
+                    }
                 }
             }
 
@@ -1161,6 +1305,23 @@ private fun SettingsScreen(c: PosController, back: () -> Unit) {
 
     val preview = pendingBackupPreview
     val backupText = pendingBackupText
+    pendingCloudDeleteId?.let { backupId ->
+        AlertDialog(
+            onDismissRequest = { pendingCloudDeleteId = null },
+            title = { Text("I-delete ang cloud backup?") },
+            text = { Text("Permanenteng aalisin ang backup na ito sa account.") },
+            confirmButton = {
+                Button(onClick = {
+                    pendingCloudDeleteId = null
+                    scope.launch {
+                        cloud.deleteBackup(backupId)
+                            .onFailure { Toast.makeText(context, it.message ?: "Hindi ma-delete ang backup.", Toast.LENGTH_LONG).show() }
+                    }
+                }) { Text("I-delete") }
+            },
+            dismissButton = { TextButton(onClick = { pendingCloudDeleteId = null }) { Text("Kanselahin") } }
+        )
+    }
     if (preview != null && backupText != null) {
         AlertDialog(
             onDismissRequest = { pendingBackupText = null; pendingBackupPreview = null },

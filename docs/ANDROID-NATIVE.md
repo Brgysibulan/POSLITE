@@ -11,7 +11,21 @@ POSlite now has a native Android implementation under `android-native/`. The exi
 
 A newer Android receipt fix is being validated after a real-device report that the old PDF/print action could close the app.
 
-Current development track: **`0.8.0-native-dev` / version code 6**. This track adds editable native button/navigation terms and a white-S/black-background Android logo. GitHub Actions native build #24 passed at commit `5c18fb2f4d33f40697bd4606c332452b67de9aa0`; real-device verification is next.
+Current development track: **`0.9.0-native-dev` / version code 7**. This track adds optional Supabase Google/Facebook login, administrator-approved plans, atomic device limits, signed offline licensing, and private validated cloud backup. GitHub Actions Android build #27 passed at feature-branch commit `c05bc51a391b3692a9caf3903ac76134adc795f9`. Production Supabase deployment and real-device acceptance are still required before release promotion.
+
+Build #27 artifact: `SariPOS-native-debug` (`10036871716`), ZIP digest `sha256:6576f72d062747208de44a3df0d3ad67b07806e2b4478e82d4f0a57f43d6118c`. It was compiled with empty cloud settings, so it validates the code/build but runs in development/offline mode rather than enforcing customer accounts.
+
+## Cloud access track — 2026-09-08
+
+- Google and Facebook OAuth through Supabase Auth with Android PKCE deep-link return.
+- Pending-by-default accounts and a protected administrator dashboard.
+- Plan plus per-license controls for days/years/lifetime validity, device count, offline allowance, features, backup count, and retention.
+- Server-side atomic device-slot activation and administrator device revocation.
+- RSA-signed offline token encrypted locally through Android Keystore.
+- Private, per-account/per-store cloud backups that accept only the native SariPOS backup contract, never arbitrary files.
+- Empty cloud build settings intentionally retain development/offline behavior; distributed licensed builds must be compiled with the documented public settings.
+
+Full deployment and test steps are in `docs/CLOUD-AUTH-LICENSING.md`.
 
 ## Editable terminology and launcher branding — 2026-09-07
 

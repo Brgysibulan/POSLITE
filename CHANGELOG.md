@@ -2,9 +2,18 @@
 
 All notable SariPOS development changes are documented here. Historical entries may still use the former development name **POSlite**.
 
-## [Unreleased] - 2026-09-07
+## [Unreleased] - 2026-09-08
 
 ### Added
+
+- Optional Supabase Auth login in native Android using Google or Facebook with PKCE deep-link handling.
+- Pending-by-default customer accounts and a protected browser administrator dashboard.
+- Trial, Basic, Standard, Business, and Lifetime plan records with configurable duration, device count, offline allowance, backup count, retention, and features.
+- Administrator approval, license activation/suspension/editing, manual payment audit records, and device revocation.
+- Atomic PostgreSQL device claiming that prevents simultaneous logins from exceeding a license limit.
+- RSA-signed, device-bound offline licenses encrypted locally with Android Keystore.
+- Private cloud backup routed through an authenticated Edge Function with strict SariPOS schema/table/column/row/size validation, generated per-account/per-store paths, retention, and SHA-256 download verification.
+- Supabase migration/functions, Android public configuration template, signing-key generation helper, and deployment/security documentation.
 
 - Native Android editable button/navigation terminology for 14 core labels, with Sari-sari and English presets.
 - Offline persistence of custom terminology in the existing settings table and automatic inclusion in native `.pos` backups.
@@ -27,6 +36,9 @@ All notable SariPOS development changes are documented here. Historical entries 
 - Dark-mode Android system-bar resource styling.
 
 ### Changed
+
+- Native development version advanced to `0.9.0-native-dev` with version code 7.
+- Native backup exports now take their app-version value from Android `BuildConfig` instead of a duplicated literal.
 
 - Native development version advanced to `0.8.0-native-dev` with version code 6.
 - Bottom navigation, More menu, principal screen titles, Back action, New Sale action, and Home purchase shortcut now react to saved terminology.
@@ -51,6 +63,8 @@ All notable SariPOS development changes are documented here. Historical entries 
 
 ### Verified
 
+- Native Android build #27 succeeded on the cloud-account feature branch at commit `c05bc51a391b3692a9caf3903ac76134adc795f9`; artifact `SariPOS-native-debug` (`10036871716`), ZIP digest `sha256:6576f72d062747208de44a3df0d3ad67b07806e2b4478e82d4f0a57f43d6118c`. This artifact used empty cloud settings and remains development/offline mode.
+- Web/document validation #123 succeeded for the same feature-branch commit.
 - Native Android build #24 succeeded at commit `5c18fb2f4d33f40697bd4606c332452b67de9aa0` with artifact `SariPOS-native-debug` (`10035046829`).
 - Web/document validation run #119 succeeded for the terminology/logo source commit.
 - Native Android build #23 succeeded at commit `c62c7bf3a7bbe454e2a0b9010dd720f0495d4b3c` with artifact `SariPOS-native-debug` (`10018058640`).

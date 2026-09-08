@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import org.json.JSONArray
 import org.json.JSONObject
+import ph.poslite.app.BuildConfig
 import kotlin.math.max
 
 data class UnitOption(
@@ -1073,7 +1074,7 @@ class PosStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_V
         return JSONObject().apply {
             put("format", BACKUP_FORMAT)
             put("schemaVersion", BACKUP_SCHEMA)
-            put("appVersion", "0.8.0-native-dev")
+            put("appVersion", BuildConfig.VERSION_NAME)
             put("exportedAt", System.currentTimeMillis())
             put("tables", tables)
         }.toString(2)

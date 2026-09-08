@@ -25,6 +25,7 @@ jobs:
           node --check brand.js
           node --check about.js
           node --check sw.js
+          node --check admin/admin.js
       - name: Verify required project files
         run: |
           test -f index.html
@@ -51,7 +52,17 @@ jobs:
           test -f docs/CASH-LOANS.md
           test -f docs/CUSTOMIZATION.md
           test -f docs/BACKUP-RESTORE.md
+          test -f docs/CLOUD-AUTH-LICENSING.md
           test -f docs/TRANSACTION-LIFECYCLE.md
           test -f docs/CASH-CLOSING.md
           test -f docs/PATCH-NOTES.md
           test -f CHANGELOG.md
+          test -f admin/index.html
+          test -f admin/admin.css
+          test -f admin/admin.js
+          test -f supabase/config.toml
+          test -f supabase/migrations/20260908000000_saripos_cloud_foundation.sql
+          test -f supabase/functions/license-status/index.ts
+          test -f supabase/functions/backups/index.ts
+          test -f supabase/functions/admin-license/index.ts
+          test -f scripts/generate-license-keys.sh

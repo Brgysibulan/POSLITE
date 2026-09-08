@@ -1,6 +1,44 @@
 # SariPOS Patch Notes
 
-## Latest patch — Editable Android Terms and S Logo
+## Latest source patch — Account Licensing and Secure Cloud Backup
+
+**Date:** 2026-09-08
+**Track:** `0.9.0-native-dev` / version code 7
+**Status:** GitHub Actions source build successful; dedicated Supabase deployment, OAuth setup, configured customer APK, and real-device acceptance are still required
+
+### Added
+
+- Google and Facebook customer login through Supabase Auth.
+- Pending account gate until administrator approval.
+- Trial, Basic, Standard, Business, and Lifetime package foundation with custom days/years, device limit, offline days, backup allowance, retention, and features.
+- Atomic server-side device slot claiming plus admin revocation.
+- RSA-signed offline license bound to the account, store, license, and Android installation; encrypted cache via Android Keystore.
+- Administrator dashboard for approval, activation/suspension, package/device/expiry editing, payment recording, and device revocation.
+- Private cloud backup with generated user/store folders and no customer-controlled upload path.
+- Strict acceptance of SariPOS Android database backup data only: table/column allowlists, row limits, scalar checks, schema checks, 5 MB cap, and SHA-256 restore verification.
+- Backup rotation by package count and retention days.
+
+### Security boundary
+
+- No Supabase secret/service-role key or license private key is embedded in Android or admin web assets.
+- Direct customer Storage upload/update/delete is not granted; Edge Functions validate authorization and content.
+- The existing unrelated `BRGYWEB-LITE` project is not a deployment target. SariPOS requires its own project.
+- An unconfigured APK remains development/offline-only and does not enforce cloud licensing. A customer APK must be built with the documented project URL, publishable key, and RSA public key.
+
+### Release gate
+
+- GitHub Actions Android build #27 passed at commit `c05bc51a391b3692a9caf3903ac76134adc795f9`.
+- Development artifact: `SariPOS-native-debug` (`10036871716`), ZIP digest `sha256:6576f72d062747208de44a3df0d3ad67b07806e2b4478e82d4f0a57f43d6118c`.
+- Web/document validation #123 passed.
+- The build #27 artifact used empty cloud settings and is not the final account-enforced APK.
+- Configure a dedicated Supabase project, Google/Facebook providers, redirect URL, signing secret, schema, bucket, and functions.
+- Test pending approval, one-device rejection, replacement after revoke, expiry/suspension, offline expiration, package overrides, cross-account backup denial, invalid file rejection, and restore checksum failure.
+
+See `docs/CLOUD-AUTH-LICENSING.md` for the complete setup and acceptance checklist.
+
+---
+
+## Previous patch — Editable Android Terms and S Logo
 
 **Date:** 2026-09-07
 **Track:** `0.8.0-native-dev`

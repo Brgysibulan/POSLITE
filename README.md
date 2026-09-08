@@ -5,14 +5,16 @@ SariPOS is a native Android, offline-first point-of-sale and inventory app for s
 ## Current development status
 
 - **Web reference:** v0.2.0 at repository root
-- **Native Android development:** v0.8.0-native-dev under `android-native/`
+- **Native Android development:** v0.9.0-native-dev under `android-native/`
 - **Primary product direction:** Android smartphone-first
 - **First verified native APK baseline:** commit `9f4acb298eb71cb13da5dcb863c1749acca50507`
-- **Latest verified native baseline:** build #24 — SUCCESS
-- **Verified terminology/logo commit:** `5c18fb2f4d33f40697bd4606c332452b67de9aa0`
+- **Latest verified native baseline:** build #27 — SUCCESS on the account/licensing feature branch
+- **Verified cloud source commit:** `c05bc51a391b3692a9caf3903ac76134adc795f9`
 - **APK artifact:** `SariPOS-native-debug`
 
 The existing web/PWA application remains the stable workflow reference while the native Android implementation is tested on real devices. The Android app is a real Kotlin/Jetpack Compose application, not a WebView wrapper.
+
+Build #27 verifies that the `0.9.0-native-dev` source assembles. Its artifact was built without production Supabase secrets and therefore remains development/offline mode; it is not the final account-enforced customer APK.
 
 ## Native Android stack
 
@@ -46,6 +48,9 @@ The existing web/PWA application remains the stable workflow reference while the
 - Strict transaction input checks for invalid/negative quantities, costs, payments, discounts, and stock adjustments
 - Calendar-day-based 7/30/90/365-day analytics windows
 - Store settings stored locally in SQLite
+- Optional Supabase Google/Facebook login with administrator-approved, payment-based licenses
+- Per-license device, expiration, offline-use, feature, and cloud-backup limits
+- Private SariPOS-only cloud backup with per-account/per-store paths and server-side validation
 
 ## Native Android database
 
@@ -166,13 +171,14 @@ This web build is intentionally preserved while the native Android app is stabil
 6. Harden scanner behavior; optionally move to a fully bundled CameraX + ML Kit scanner if complete offline model availability is required.
 7. Add direct Bluetooth thermal-printer integration.
 8. Extend automatic cart recovery and full-sale void/return into named multi-cart holds, partial returns/exchanges, and refund tender tracking; add loss analytics for damaged/expired stock.
-9. Add encrypted/protected backups.
+9. Deploy and device-test the Supabase authentication/licensing/private-backup track described in `docs/CLOUD-AUTH-LICENSING.md`.
 
 ## Documentation
 
 - `docs/PROJECT.md` — master project documentation
 - `docs/ANDROID-NATIVE.md` — native Android architecture, successful build baseline, and migration status
 - `docs/BACKUP-RESTORE.md` — native backup format, restore guarantees, limitations, and device-test checklist
+- `docs/CLOUD-AUTH-LICENSING.md` — social login, account/device licensing, plans, payments, private cloud backup, and deployment
 - `docs/TRANSACTION-LIFECYCLE.md` — sale void/return, stock reversal, damaged/expired stock, and physical counts
 - `docs/CASH-CLOSING.md` — drawer formula, shift periods, variance history, and current payment-source boundary
 - `docs/BARCODE-SCANNER.md` — scanner behavior

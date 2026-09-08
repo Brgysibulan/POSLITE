@@ -15,6 +15,12 @@ Open **Ayos ng App → Backup at Restore**.
 
 No internet connection or monthly service is required. The system picker lets the user choose an available phone folder or a storage provider already configured on the device.
 
+## Optional private cloud backup
+
+The `0.9.0-native-dev` configured build adds **Backup Now**, list, restore, and delete controls for licensed accounts whose package includes cloud backup. It does not provide arbitrary file upload: Android sends only its generated database export to an authenticated Edge Function. The server parses and validates the format, schema, exact table/column allowlists, scalar values, row limits, and 5 MB maximum before writing a server-named object to the private account/store path. Downloads are membership-checked, revalidated, and compared with their saved SHA-256 checksum.
+
+Plan limits rotate old backups by count and retention days. Cloud restore still uses the existing Android preview and explicit replacement confirmation. Details and deployment steps are in `docs/CLOUD-AUTH-LICENSING.md`.
+
 ## Native file contract
 
 - File extension: `.pos`
