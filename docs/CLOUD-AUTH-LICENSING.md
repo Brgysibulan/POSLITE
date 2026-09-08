@@ -53,8 +53,8 @@ Local Android export/restore remains available through the system document picke
    supabase secrets set LICENSE_PRIVATE_KEY="$(cat <secure-directory>/saripos-license-private.pem)"
    ```
 
-   The functions also require the project-provided `SUPABASE_URL`, publishable key, and secret/service-role key environment values.
-7. Deploy `license-status`, `backups`, and `admin-license` with JWT verification enabled.
+   Hosted Edge Functions receive `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEYS`, and `SUPABASE_SECRET_KEYS` automatically. The plural key values are JSON dictionaries and the functions read their `default` entries. Legacy `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` remain supported for local or transitional deployments.
+7. Deploy `license-status`, `backups`, and `admin-license` with platform JWT verification disabled. Each function still fails closed: `requireUser()` validates the caller's Bearer session through Supabase Auth before any license or backup operation, and `requireAdmin()` additionally checks the protected administrator profile.
 8. Promote one trusted user to administrator directly in SQL after that user signs in:
 
    ```sql

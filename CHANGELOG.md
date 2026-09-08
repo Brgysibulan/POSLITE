@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-08 - Supabase 2026 key compatibility
+
+### Fixed
+- Updated all licensing and private-backup Edge Functions for the hosted `SUPABASE_PUBLISHABLE_KEYS` and `SUPABASE_SECRET_KEYS` JSON dictionaries.
+- Kept legacy anon/service-role environment fallbacks for local and transitional deployments.
+- Disabled the platform `verify_jwt` gate for these functions because opaque `sb_publishable_*` keys are not JWTs; authenticated user sessions are still validated inside `requireUser()`, and administrator requests still require the protected admin profile check.
+
+### Documentation
+- Corrected the deployment guide so a new dedicated POSLITE/SariPOS Supabase project can use the current key model without false `Invalid JWT` failures.
+
+
 All notable SariPOS development changes are documented here. Historical entries may still use the former development name **POSlite**.
 
 ## [Unreleased] - 2026-09-08

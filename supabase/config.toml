@@ -5,11 +5,11 @@ site_url = "saripos://auth/callback"
 additional_redirect_urls = ["saripos://auth/callback"]
 
 [functions.license-status]
-verify_jwt = true
+verify_jwt = false
 
 [functions.backups]
-verify_jwt = true
+verify_jwt = false
 
 [functions.admin-license]
-verify_jwt = true
+verify_jwt = false
 
