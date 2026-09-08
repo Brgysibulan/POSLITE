@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-08 - Supabase production database deployment
+
+### Deployed
+- Created the dedicated POSLITE Supabase project in Singapore without modifying BRGYWEB-LITE.
+- Applied the licensing, configurable plan/device-limit, payment, audit-log, and private backup schema.
+- Deployed the `license-status`, `backups`, and `admin-license` Edge Functions.
+- Added covering indexes for all foreign-key columns reported by the Supabase performance advisor.
+
+
 ## 2026-09-08 - Supabase 2026 key compatibility
 
 ### Fixed
