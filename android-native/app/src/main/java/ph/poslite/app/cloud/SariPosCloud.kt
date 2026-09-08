@@ -227,6 +227,7 @@ class CloudController(context: Context) {
             .put("backup", JSONObject(backupText))
         api.post("backups", token, body)
         loadBackups().getOrThrow()
+        Unit
     }.also { working = false }
 
     suspend fun loadBackups(): Result<List<CloudBackup>> = runCatching {
@@ -257,6 +258,7 @@ class CloudController(context: Context) {
         activeLicense()
         api.post("backups", requireAccessToken(), JSONObject().put("action", "delete").put("backupId", backupId))
         loadBackups().getOrThrow()
+        Unit
     }
 
     private fun activeLicense(): LicenseSnapshot =
