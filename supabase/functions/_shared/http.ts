@@ -32,10 +32,36 @@ export interface RequestContext {
   adminClient: SupabaseClient;
 }
 
+function namedKeyFromJson(environmentName: string, keyName = "default"): string | undefined {
+  const raw = Deno.env.get(environmentName);
+  if (!raw) return undefined;
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
+    const value = (parsed as Record<string, unknown>)[keyName];
+    return typeof value === "string" && value.length > 0 ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function serverKeys(): { publishableKey: string | undefined; secretKey: string | undefined } {
+  return {
+    publishableKey:
+      namedKeyFromJson("SUPABASE_PUBLISHABLE_KEYS") ??
+      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ??
+      Deno.env.get("SUPABASE_ANON_KEY"),
+    secretKey:
+      namedKeyFromJson("SUPABASE_SECRET_KEYS") ??
+      Deno.env.get("SUPABASE_SECRET_KEY") ??
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+  };
+}
+
 export async function requireUser(req: Request): Promise<RequestContext> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY");
-  const secretKey = Deno.env.get("SUPABASE_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const { publishableKey, secretKey } = serverKeys();
   const authorization = req.headers.get("Authorization") ?? "";
 
   if (!supabaseUrl || !publishableKey || !secretKey) throw new HttpError(500, "Supabase server configuration is incomplete.");
